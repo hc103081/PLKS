@@ -20,10 +20,15 @@
     "indentWidth": 2,
     "lineWidth": 100
   },
-  "javascript": { "formatter": { "semicolons": "always", "trailingCommas": "all" } },
+  "javascript": {
+    "formatter": { "semicolons": "always", "trailingCommas": "all" }
+  },
+  "files": {
+    "ignore": ["**/coverage/**", "**/dist/**", "**/node_modules/**"]
+  },
   "overrides": [
     {
-      "includes": ["**/*.test.ts", "**/*.spec.ts"],
+      "include": ["**/*.test.ts", "**/*.spec.ts"],
       "linter": { "rules": { "suspicious": { "noExplicitAny": "off" } } }
     }
   ]

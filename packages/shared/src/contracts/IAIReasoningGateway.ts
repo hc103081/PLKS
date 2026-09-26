@@ -7,9 +7,5 @@ export interface IAIReasoningGateway {
    * @param imageUrls 圖片 Presigned URL 陣列
    * @returns 解析後的 JSON 物件
    */
-  multimodalInfer(
-    systemPrompt: string,
-    textPayload: string,
-    imageUrls: string[]
-  ): Promise<unknown>;
+  multimodalInfer(systemPrompt: string, textPayload: string, imageUrls: string[]): Promise<unknown>;
 }

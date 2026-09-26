@@ -1,5 +1,5 @@
 // packages/shared/src/schemas/concept-node.schema.ts
-import { z } from 'zod';
+import { z } from "zod";
 
 export const ConceptNodePayloadSchema = z.object({
   conceptId: z.string().uuid(),

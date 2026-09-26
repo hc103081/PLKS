@@ -1,62 +1,68 @@
 // apps/api/src/core/errors/domain-errors.ts
-import { err, ok, Result } from 'neverthrow';
+import { type Result, err, ok } from "neverthrow";
 
 export class DomainError extends Error {
   constructor(
     public readonly code: string,
     message: string,
-    public override readonly cause?: unknown
+    public override readonly cause?: unknown,
   ) {
     super(message);
-    this.name = 'DomainError';
+    this.name = "DomainError";
   }
 
   static storageUploadFailed(cause?: unknown): DomainError {
-    return new DomainError('STORAGE_UPLOAD_FAILED', 'Failed to upload file to storage', cause);
+    return new DomainError("STORAGE_UPLOAD_FAILED", "Failed to upload file to storage", cause);
   }
 
   static storageDownloadFailed(cause?: unknown): DomainError {
-    return new DomainError('STORAGE_DOWNLOAD_FAILED', 'Failed to download file from storage', cause);
+    return new DomainError(
+      "STORAGE_DOWNLOAD_FAILED",
+      "Failed to download file from storage",
+      cause,
+    );
   }
 
   static storageListFailed(cause?: unknown): DomainError {
-    return new DomainError('STORAGE_LIST_FAILED', 'Failed to list directory', cause);
+    return new DomainError("STORAGE_LIST_FAILED", "Failed to list directory", cause);
   }
 
   static presignedUrlFailed(cause?: unknown): DomainError {
-    return new DomainError('PRESIGNED_URL_FAILED', 'Failed to generate presigned URL', cause);
+    return new DomainError("PRESIGNED_URL_FAILED", "Failed to generate presigned URL", cause);
   }
 
   static aiInferenceFailed(cause?: unknown): DomainError {
-    return new DomainError('AI_INFERENCE_FAILED', 'AI inference failed', cause);
+    return new DomainError("AI_INFERENCE_FAILED", "AI inference failed", cause);
   }
 
   static aiValidationFailed(cause?: unknown): DomainError {
-    return new DomainError('AI_VALIDATION_FAILED', 'AI output validation failed', cause);
+    return new DomainError("AI_VALIDATION_FAILED", "AI output validation failed", cause);
   }
 
   static markdownWriteFailed(cause?: unknown): DomainError {
-    return new DomainError('MARKDOWN_WRITE_FAILED', 'Failed to write markdown to storage', cause);
+    return new DomainError("MARKDOWN_WRITE_FAILED", "Failed to write markdown to storage", cause);
   }
 
   static ingestionFailed(cause?: unknown): DomainError {
-    return new DomainError('INGESTION_FAILED', 'Ingestion pipeline failed', cause);
+    return new DomainError("INGESTION_FAILED", "Ingestion pipeline failed", cause);
   }
 
   static dagExecutionFailed(node: string, cause?: unknown): DomainError {
-    return new DomainError('DAG_EXECUTION_FAILED', `DAG node ${node} failed`, cause);
+    return new DomainError("DAG_EXECUTION_FAILED", `DAG node ${node} failed`, cause);
   }
 
   static notFound(resource: string, id: string): DomainError {
-    return new DomainError('NOT_FOUND', `${resource} not found: ${id}`);
+    return new DomainError("NOT_FOUND", `${resource} not found: ${id}`);
   }
 
   static invalidInput(message: string): DomainError {
-    return new DomainError('INVALID_INPUT', message);
+    return new DomainError("INVALID_INPUT", message);
   }
 }
 
 export type DomainResult<T> = Result<T, DomainError>;
 
-export const toDomainResult = <T>(promise: Promise<T>, errorFactory: (cause: unknown) => DomainError): Promise<DomainResult<T>> =>
-  promise.then(ok).catch((cause) => err(errorFactory(cause)));
+export const toDomainResult = <T>(
+  promise: Promise<T>,
+  errorFactory: (cause: unknown) => DomainError,
+): Promise<DomainResult<T>> => promise.then(ok).catch((cause) => err(errorFactory(cause)));

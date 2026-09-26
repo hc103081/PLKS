@@ -1,24 +1,28 @@
+import type { IStorageAdapter } from "@plks/shared/contracts";
+import type { IKnowledgeGraphWriter } from "@plks/shared/contracts";
+import type { IAIReasoningGateway } from "@plks/shared/contracts";
 // apps/api/src/config/di.ts
-import { container } from 'tsyringe';
-import type { IStorageAdapter } from '@plks/shared/contracts';
-import type { IKnowledgeGraphWriter } from '@plks/shared/contracts';
-import type { IAIReasoningGateway } from '@plks/shared/contracts';
+import { container } from "tsyringe";
 
 // Token symbols for interface binding
 export const TOKENS = {
-  IStorageAdapter: Symbol.for('IStorageAdapter'),
-  IKnowledgeGraphWriter: Symbol.for('IKnowledgeGraphWriter'),
-  IAIReasoningGateway: Symbol.for('IAIReasoningGateway'),
+  IStorageAdapter: Symbol.for("IStorageAdapter"),
+  IKnowledgeGraphWriter: Symbol.for("IKnowledgeGraphWriter"),
+  IAIReasoningGateway: Symbol.for("IAIReasoningGateway"),
 } as const;
 
 export function registerAdapters(
   storageAdapter: IStorageAdapter,
   knowledgeGraphWriter: IKnowledgeGraphWriter,
-  aiReasoningGateway: IAIReasoningGateway
+  aiReasoningGateway: IAIReasoningGateway,
 ): void {
   container.register(TOKENS.IStorageAdapter, { useValue: storageAdapter });
-  container.register(TOKENS.IKnowledgeGraphWriter, { useValue: knowledgeGraphWriter });
-  container.register(TOKENS.IAIReasoningGateway, { useValue: aiReasoningGateway });
+  container.register(TOKENS.IKnowledgeGraphWriter, {
+    useValue: knowledgeGraphWriter,
+  });
+  container.register(TOKENS.IAIReasoningGateway, {
+    useValue: aiReasoningGateway,
+  });
 }
 
 export function resolveStorageAdapter(): IStorageAdapter {

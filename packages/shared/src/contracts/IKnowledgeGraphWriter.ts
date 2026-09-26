@@ -1,5 +1,5 @@
 // packages/shared/src/contracts/IKnowledgeGraphWriter.ts
-import type { ConceptNodePayload } from '../schemas/concept-node.schema.js';
+import type { ConceptNodePayload } from "../schemas/concept-node.schema.js";
 
 export interface IKnowledgeGraphWriter {
   /** 將單一概念節點轉為 Markdown 並寫入 B2 */

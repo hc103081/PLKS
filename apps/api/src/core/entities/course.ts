@@ -5,7 +5,7 @@ export class Course {
     public readonly title: string,
     public readonly description: string,
     public readonly createdAt: Date,
-    public readonly updatedAt: Date
+    public readonly updatedAt: Date,
   ) {}
 
   static create(courseId: string, title: string, description: string): Course {

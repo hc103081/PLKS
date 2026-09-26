@@ -1,5 +1,5 @@
 // apps/api/src/core/entities/concept-node.ts
-import type { ConceptNodePayload } from '@plks/shared/schemas';
+import type { ConceptNodePayload } from "@plks/shared/schemas";
 
 export class ConceptNode {
   constructor(
@@ -11,7 +11,7 @@ export class ConceptNode {
     public readonly sourceEvidence: {
       transcriptRef: string;
       slideUri: string;
-    }
+    },
   ) {}
 
   static fromPayload(payload: ConceptNodePayload): ConceptNode {
@@ -21,7 +21,7 @@ export class ConceptNode {
       payload.term,
       payload.explanation,
       [...payload.relatedTerms],
-      { ...payload.sourceEvidence }
+      { ...payload.sourceEvidence },
     );
   }
 
@@ -41,13 +41,13 @@ export class ConceptNode {
 conceptId: ${this.conceptId}
 courseId: ${this.courseId}
 term: ${this.term}
-tags: [${this.relatedTerms.map((t) => `"${t}"`).join(', ')}]
+tags: [${this.relatedTerms.map((t) => `"${t}"`).join(", ")}]
 sourceEvidence:
   transcriptRef: ${this.sourceEvidence.transcriptRef}
   slideUri: ${this.sourceEvidence.slideUri}
 ---`;
 
-    const links = this.relatedTerms.map((t) => `[[${t}]]`).join(', ');
+    const links = this.relatedTerms.map((t) => `[[${t}]]`).join(", ");
 
     return `${frontmatter}
 
@@ -55,7 +55,7 @@ sourceEvidence:
 
 ${this.explanation}
 
-**相關概念**: ${links || '無'}
+**相關概念**: ${links || "無"}
 
 **來源**: 逐字稿 ${this.sourceEvidence.transcriptRef} | 投影片 ${this.sourceEvidence.slideUri}
 `;

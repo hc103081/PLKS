@@ -1,18 +1,18 @@
 // apps/api/src/main.ts
-import 'reflect-metadata';
-import dotenv from 'dotenv';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import "reflect-metadata";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import dotenv from "dotenv";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-dotenv.config({ path: resolve(__dirname, '../.env') });
+dotenv.config({ path: resolve(__dirname, "../.env") });
 
 // Import after dotenv.config() so env vars are loaded
-const { default: Fastify } = await import('fastify');
-const { loadEnv } = await import('./config/env.js');
-const { container } = await import('tsyringe');
+const { default: Fastify } = await import("fastify");
+const { loadEnv } = await import("./config/env.js");
+const { container } = await import("tsyringe");
 
 const env = loadEnv();
 
@@ -23,7 +23,7 @@ const env = loadEnv();
 
 const loggerConfig = {
   level: env.LOG_LEVEL,
-  ...(env.NODE_ENV === 'development' ? { transport: { target: 'pino-pretty' } } : {}),
+  ...(env.NODE_ENV === "development" ? { transport: { target: "pino-pretty" } } : {}),
 };
 
 const app = Fastify({
@@ -31,10 +31,13 @@ const app = Fastify({
 });
 
 // Register DI container
-app.decorate('container', container);
+app.decorate("container", container);
 
 // Health check
-app.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
+app.get("/health", async () => ({
+  status: "ok",
+  timestamp: new Date().toISOString(),
+}));
 
 // Register routes (placeholders for now)
 // app.register(ingestionRoutes, { prefix: env.API_PREFIX });
@@ -43,7 +46,7 @@ app.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOStrin
 
 async function start(): Promise<void> {
   try {
-    await app.listen({ port: env.PORT, host: '0.0.0.0' });
+    await app.listen({ port: env.PORT, host: "0.0.0.0" });
     app.log.info(`Server listening on port ${env.PORT}`);
   } catch (err) {
     app.log.error(err);

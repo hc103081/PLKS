@@ -1,15 +1,15 @@
 // apps/api/src/core/entities/quiz-item.ts
-import type { QuizItemPayload } from '@plks/shared/schemas';
+import type { QuizItemPayload } from "@plks/shared/schemas";
 
 export class QuizItem {
   constructor(
     public readonly quizId: string,
     public readonly courseId: string,
-    public readonly type: 'multiple_choice' | 'true_false' | 'short_answer',
+    public readonly type: "multiple_choice" | "true_false" | "short_answer",
     public readonly question: string,
     public readonly options: readonly string[] | undefined,
     public readonly correctAnswer: string,
-    public readonly contextReference: string
+    public readonly contextReference: string,
   ) {}
 
   static fromPayload(payload: QuizItemPayload): QuizItem {
@@ -20,7 +20,7 @@ export class QuizItem {
       payload.question,
       payload.options ? [...payload.options] : undefined,
       payload.correctAnswer,
-      payload.contextReference
+      payload.contextReference,
     );
   }
 

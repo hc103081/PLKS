@@ -1,5 +1,5 @@
 // packages/shared/src/contracts/IStorageAdapter.ts
-import type { Readable } from 'node:stream';
+import type { Readable } from "node:stream";
 
 export interface IStorageAdapter {
   /** 上傳檔案至 B2，回傳 URI (s3://bucket/path) */

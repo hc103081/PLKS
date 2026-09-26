@@ -1,5 +1,5 @@
 // apps/api/src/core/entities/raw-asset.ts
-import type { RawAssetPayload } from '@plks/shared/schemas';
+import type { RawAssetPayload } from "@plks/shared/schemas";
 
 export class RawAsset {
   constructor(
@@ -13,7 +13,7 @@ export class RawAsset {
     public readonly visualAssets: ReadonlyArray<{
       page_num: number;
       b2_uri: string;
-    }>
+    }>,
   ) {}
 
   static fromPayload(payload: RawAssetPayload): RawAsset {
@@ -21,7 +21,7 @@ export class RawAsset {
       payload.sessionId,
       payload.courseId,
       [...payload.transcripts],
-      [...payload.visualAssets]
+      [...payload.visualAssets],
     );
   }
 
@@ -35,13 +35,13 @@ export class RawAsset {
   }
 
   getFullTranscript(): string {
-    return this.transcripts.map((t) => t.text).join(' ');
+    return this.transcripts.map((t) => t.text).join(" ");
   }
 
   getTranscriptByTimeRange(start: string, end: string): string {
     return this.transcripts
       .filter((t) => t.start_time >= start && t.end_time <= end)
       .map((t) => t.text)
-      .join(' ');
+      .join(" ");
   }
 }
