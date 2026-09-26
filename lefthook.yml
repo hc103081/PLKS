@@ -1,0 +1,10 @@
+# lefthook.yml
+pre-commit:
+  parallel: true
+  commands:
+    biome-check:
+      glob: "*.{ts,tsx,json,jsonc}"
+      run: pnpm biome check --write {staged_files}
+    typecheck:
+      run: pnpm typecheck
+  # Note: tests run in CI, not on every commit for speed
