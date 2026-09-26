@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "declarationMap": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@plks/shared/*": ["packages/shared/src/*"],
+      "@plks/api/*": ["apps/api/src/*"],
+      "@plks/web/*": ["apps/web/src/*"]
+    }
+  },
+  "exclude": ["node_modules", "dist", ".turbo"]
+}
