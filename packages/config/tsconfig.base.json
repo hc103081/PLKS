@@ -17,12 +17,7 @@
     "declaration": true,
     "declarationMap": true,
     "noEmit": true,
-    "baseUrl": ".",
-    "paths": {
-      "@plks/shared/*": ["packages/shared/src/*"],
-      "@plks/api/*": ["apps/api/src/*"],
-      "@plks/web/*": ["apps/web/src/*"]
-    }
+    "baseUrl": "."
   },
   "exclude": ["node_modules", "dist", ".turbo"]
 }

@@ -1,6 +1,7 @@
 // packages/shared/src/schemas/__tests__/schemas.test.ts
 import { describe, expect, it } from "vitest";
 import {
+  AiExtractionResultSchema,
   ConceptNodePayloadSchema,
   QuizItemPayloadSchema,
   RawAssetPayloadSchema,
@@ -64,5 +65,63 @@ describe("Shared Schemas", () => {
       b2TargetDir: "s3://pkm-omni-vault/vault/CS101/",
     };
     expect(UserConfigPayloadSchema.parse(valid)).toEqual(valid);
+  });
+
+  it("validates AiExtractionResult with conceptNodes and quizItems", () => {
+    const valid = {
+      conceptNodes: [
+        {
+          conceptId: "123e4567-e89b-12d3-a456-426614174000",
+          courseId: "CS101",
+          term: "Marginal Cost",
+          explanation: "Cost of producing one more unit",
+          relatedTerms: ["Supply", "Demand"],
+          sourceEvidence: {
+            transcriptRef: "00:15:30",
+            slideUri: "s3://bucket/slide5.png",
+          },
+        },
+      ],
+      quizItems: [
+        {
+          quizId: "123e4567-e89b-12d3-a456-426614174001",
+          courseId: "CS101",
+          type: "multiple_choice" as const,
+          question: "What is marginal cost?",
+          options: ["A", "B", "C"],
+          correctAnswer: "B",
+          contextReference: "123e4567-e89b-12d3-a456-426614174000",
+        },
+      ],
+    };
+    expect(AiExtractionResultSchema.parse(valid)).toEqual(valid);
+  });
+
+  it("validates AiExtractionResult with empty arrays", () => {
+    const valid = {
+      conceptNodes: [],
+      quizItems: [],
+    };
+    expect(AiExtractionResultSchema.parse(valid)).toEqual(valid);
+  });
+
+  it("rejects AiExtractionResult with invalid conceptNode", () => {
+    const invalid = {
+      conceptNodes: [
+        {
+          conceptId: "not-uuid",
+          courseId: "",
+          term: "",
+          explanation: "",
+          relatedTerms: [],
+          sourceEvidence: {
+            transcriptRef: "invalid",
+            slideUri: "not-uri",
+          },
+        },
+      ],
+      quizItems: [],
+    };
+    expect(() => AiExtractionResultSchema.parse(invalid)).toThrow();
   });
 });

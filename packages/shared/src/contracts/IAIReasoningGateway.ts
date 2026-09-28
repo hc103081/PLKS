@@ -1,4 +1,7 @@
 // packages/shared/src/contracts/IAIReasoningGateway.ts
+import type { Result } from "neverthrow";
+import type { DomainError } from "../errors/domain-error.js";
+
 export interface IAIReasoningGateway {
   /**
    * 多模態推理
@@ -7,5 +10,9 @@ export interface IAIReasoningGateway {
    * @param imageUrls 圖片 Presigned URL 陣列
    * @returns 解析後的 JSON 物件
    */
-  multimodalInfer(systemPrompt: string, textPayload: string, imageUrls: string[]): Promise<unknown>;
+  multimodalInfer(
+    systemPrompt: string,
+    textPayload: string,
+    imageUrls: string[],
+  ): Promise<Result<unknown, DomainError>>;
 }

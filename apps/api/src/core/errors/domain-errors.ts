@@ -43,6 +43,10 @@ export class DomainError extends Error {
     return new DomainError("MARKDOWN_WRITE_FAILED", "Failed to write markdown to storage", cause);
   }
 
+  static storageAccessDenied(cause?: unknown): DomainError {
+    return new DomainError("STORAGE_ACCESS_DENIED", "Access denied to storage", cause);
+  }
+
   static ingestionFailed(cause?: unknown): DomainError {
     return new DomainError("INGESTION_FAILED", "Ingestion pipeline failed", cause);
   }

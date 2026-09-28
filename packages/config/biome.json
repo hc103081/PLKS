@@ -11,7 +11,8 @@
         "useConst": "error",
         "useAsConstAssertion": "error"
       },
-      "suspicious": { "noExplicitAny": "error" }
+      "suspicious": { "noExplicitAny": "error" },
+      "complexity": { "useLiteralKeys": "off" }
     }
   },
   "formatter": {
