@@ -17,10 +17,6 @@ const SessionParamsSchema = z.object({
   sessionId: z.string().uuid(),
 });
 
-type StartGameBody = z.infer<typeof StartGameBodySchema>;
-type SubmitAnswerBody = z.infer<typeof SubmitAnswerBodySchema>;
-type SessionParams = z.infer<typeof SessionParamsSchema>;
-
 function createStartGameHandler(gamification: GamificationServiceInterface): RouteHandlerMethod {
   return async (request, reply) => {
     const parseResult = StartGameBodySchema.safeParse(request.body);

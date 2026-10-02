@@ -150,7 +150,7 @@ export function QuizPlayer() {
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <p className="font-medium text-gray-800 mb-2">📎 相關投影片</p>
                     <ul className="space-y-1">
-                      {sidekickResponse.relatedSlideUris.map((uri, i) => (
+                      {sidekickResponse.relatedSlideUris.map((_uri, i) => (
                         <li
                           key={i}
                           className="text-sm text-blue-600 hover:underline cursor-pointer"
@@ -182,14 +182,13 @@ export function QuizPlayer() {
           <div className="bg-white rounded-xl shadow p-8">
             <div className="mb-6">
               <span
-                className={
-                  "inline-block px-3 py-1 text-xs font-medium rounded-full " +
-                  (currentQuiz.type === "multiple_choice"
+                className={`inline-block px-3 py-1 text-xs font-medium rounded-full ${
+                  currentQuiz.type === "multiple_choice"
                     ? "bg-blue-100 text-blue-800"
                     : currentQuiz.type === "true_false"
                       ? "bg-green-100 text-green-800"
-                      : "bg-purple-100 text-purple-800")
-                }
+                      : "bg-purple-100 text-purple-800"
+                }`}
               >
                 {getTypeLabel(currentQuiz.type)}
               </span>
@@ -277,12 +276,11 @@ export function QuizPlayer() {
           <div className="mt-6 bg-white rounded-xl shadow p-6">
             <div className="flex items-center gap-3 mb-4">
               <div
-                className={
-                  "w-12 h-12 rounded-full flex items-center justify-center " +
-                  (session.answers[session.answers.length - 1]?.isCorrect
+                className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                  session.answers[session.answers.length - 1]?.isCorrect
                     ? "bg-green-100 text-green-600"
-                    : "bg-red-100 text-red-600")
-                }
+                    : "bg-red-100 text-red-600"
+                }`}
               >
                 {session.answers[session.answers.length - 1]?.isCorrect ? (
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -306,12 +304,11 @@ export function QuizPlayer() {
               </div>
               <div>
                 <h3
-                  className={
-                    "font-semibold " +
-                    (session.answers[session.answers.length - 1]?.isCorrect
+                  className={`font-semibold ${
+                    session.answers[session.answers.length - 1]?.isCorrect
                       ? "text-green-800"
-                      : "text-red-800")
-                  }
+                      : "text-red-800"
+                  }`}
                 >
                   {session.answers[session.answers.length - 1]?.isCorrect ? "正確！" : "不太正確"}
                 </h3>

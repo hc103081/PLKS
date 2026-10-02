@@ -12,9 +12,6 @@ const SessionParamsSchema = z.object({
   sessionId: z.string().uuid(),
 });
 
-type StartSessionBody = z.infer<typeof StartSessionBodySchema>;
-type SessionParams = z.infer<typeof SessionParamsSchema>;
-
 function createStartSessionHandler(orchestrator: OrchestratorService): RouteHandlerMethod {
   return async (request, reply) => {
     const parseResult = StartSessionBodySchema.safeParse(request.body);

@@ -3,8 +3,12 @@ import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { config } from "dotenv";
 
 config({ path: "C:/project_Code/PLKS/.env" });
-function required(n: string) {
-  return process.env[n]!;
+function required(n: string): string {
+  const val = process.env[n];
+  if (!val) {
+    throw new Error(`Missing environment variable: ${n}`);
+  }
+  return val;
 }
 
 async function main() {
@@ -31,7 +35,7 @@ async function main() {
         new GetObjectCommand({ Bucket: required("B2_BUCKET_NAME"), Key: key }),
       );
       console.log(`✅ GET ${key} HTTP 200. Body? ${!!r.Body}`);
-    } catch (e: any) {
+    } catch (e: unknown) {
       const status = e?.$metadata?.httpStatusCode ?? "??";
       const name = e?.name ?? "Error";
       const code = e?.Code ?? e?.code ?? "";

@@ -47,7 +47,8 @@ export function CourseTabs({ activeTab, onTabChange, sessionId, pipelineStatus }
       <div className="max-w-[1440px] mx-auto">
         <div className="flex items-center gap-1 h-12 overflow-x-auto pb-1 -mx-4 px-4 lg:mx-0 lg:px-0">
           {TABS.map(({ key, label, icon, description }) => (
-            <button type="button"
+            <button
+              type="button"
               key={key}
               onClick={() => onTabChange(key)}
               role="tab"

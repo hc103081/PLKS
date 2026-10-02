@@ -3,8 +3,12 @@ import { GetObjectCommand, ListObjectsV2Command, S3Client } from "@aws-sdk/clien
 import { config } from "dotenv";
 
 config({ path: "C:/project_Code/PLKS/.env" });
-function required(n: string) {
-  return process.env[n]!;
+function required(n: string): string {
+  const val = process.env[n];
+  if (!val) {
+    throw new Error(`Missing environment variable: ${n}`);
+  }
+  return val;
 }
 
 async function main() {
@@ -21,7 +25,9 @@ async function main() {
 
   const list = await client.send(new ListObjectsV2Command({ Bucket: bucket, MaxKeys: 30 }));
   console.log("All keys in bucket:");
-  (list.Contents ?? []).forEach((o) => console.log("  ", JSON.stringify(o.Key), "size=", o.Size));
+  for (const o of list.Contents ?? []) {
+    console.log("  ", JSON.stringify(o.Key), "size=", o.Size);
+  }
 
   // Try each with leading slash too
   const candidates = [
@@ -32,7 +38,7 @@ async function main() {
     try {
       await client.send(new GetObjectCommand({ Bucket: bucket, Key: k }));
       console.log("✅ Found:", JSON.stringify(k));
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.log(
         "❌",
         JSON.stringify(k),

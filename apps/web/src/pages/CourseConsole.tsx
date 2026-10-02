@@ -35,7 +35,7 @@ export function CourseConsole() {
     }
   }, [courseId, sessionId, navigate]);
 
-  async function loadCourseData(courseId: string) {
+  async function loadCourseData(_courseId: string) {
     setIsLoading(true);
     try {
       // In a real app, this would fetch from B2/vault

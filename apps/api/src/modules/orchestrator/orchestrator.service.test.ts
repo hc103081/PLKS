@@ -1,4 +1,3 @@
-import type { Readable } from "node:stream";
 import { Readable } from "node:stream";
 import type { IStorageAdapter } from "@plks/shared/contracts";
 import type { IKnowledgeGraphWriter } from "@plks/shared/contracts";
@@ -10,7 +9,7 @@ import type { DagEngine } from "../../core/dag/engine.js";
 import { Session } from "../../core/entities/session.js";
 import { DomainError } from "../../core/errors/domain-errors.js";
 import { type PipelineContext, createPipelineNodes } from "./nodes.js";
-import { OrchestratorService, type PipelineContext } from "./orchestrator.service.js";
+import { OrchestratorService } from "./orchestrator.service.js";
 import { SessionStateStore } from "./session-state.store.js";
 
 describe("OrchestratorService", () => {
