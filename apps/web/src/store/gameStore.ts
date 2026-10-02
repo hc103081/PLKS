@@ -1,6 +1,6 @@
 // apps/web/src/store/gameStore.ts
 import { create } from "zustand";
-import type { GameSession, QuizItemPayload, SidekickResponse } from "../types/api.js";
+import type { GameSession, QuizItemPayload, SidekickResponse } from "../types/api";
 
 interface GameState {
   // Current game session

@@ -160,7 +160,7 @@ export class IngestionPipeline {
     // Try to extract course ID from filename
     // Format: {courseId}_{rest}.ext or {courseId}-{rest}.ext
     const match = fileName.match(/^([A-Za-z0-9_-]+)[_-]/);
-    if (match && match[1]) {
+    if (match?.[1]) {
       return match[1];
     }
     // Fallback: use filename without extension

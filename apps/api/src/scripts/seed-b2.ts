@@ -119,22 +119,16 @@ async function main() {
   const frontmatter = (id: string, term: string, related: string[], ref: string) =>
     `---\nconceptId: "${id}"\ncourseId: "${courseId}"\ntitle: "${term}"\ntags: ["${courseId}", "concept"]\nrelatedTerms: [${related.map((t) => `"${t}"`).join(", ")}]\nsourceEvidence:\n  transcriptRef: "${ref}"\n  slideUri: "s3://${bucket}/${vault}/_assets/slide-${id.slice(-1)}.png"\n---\n\n`;
 
-  const node1 =
-    frontmatter(
-      CONCEPT_1_ID,
-      "Clean Architecture",
-      ["Hexagonal Architecture", "DAG 引擎"],
-      "00:00:00",
-    ) +
-    `# Clean Architecture\n\nClean Architecture 由 Robert C. Martin (Uncle Bob) 提出，核心精神是**依賴反轉**：\n\n1. **Entities (實體層)**：企業級商業規則，零外部依賴\n2. **Use Cases (使用案例層)**：應用級業務邏輯，只依賴 Entities\n3. **Interface Adapters (介面配接層)**：定義 [[Ports & Adapters]] 的介面\n4. **Frameworks & Drivers (框架驅動層)**：DB、UI、SDK、[[Backblaze B2]] 等細節\n\n## 優點\n- 核心邏輯可獨立測試（無須啟動資料庫/伺服器）\n- 框架可抽換（今天用 Fastify，明天換 Hono）\n- 易於導入 Event-Driven 與 DAG Pipeline\n\n## 對照 PLKS\n- Entities → [concept.node.ts](file:///C:/project_Code/PLKS/apps/api/src/core/entities/concept.node.ts)\n- Use Cases → modules/orchestrator/*\n- Interface Adapters → @plks/shared/contracts\n- Frameworks → @aws-sdk/client-s3、Fastify\n`;
+  const node1 = `${frontmatter(
+    CONCEPT_1_ID,
+    "Clean Architecture",
+    ["Hexagonal Architecture", "DAG 引擎"],
+    "00:00:00",
+  )}# Clean Architecture\n\nClean Architecture 由 Robert C. Martin (Uncle Bob) 提出，核心精神是**依賴反轉**：\n\n1. **Entities (實體層)**：企業級商業規則，零外部依賴\n2. **Use Cases (使用案例層)**：應用級業務邏輯，只依賴 Entities\n3. **Interface Adapters (介面配接層)**：定義 [[Ports & Adapters]] 的介面\n4. **Frameworks & Drivers (框架驅動層)**：DB、UI、SDK、[[Backblaze B2]] 等細節\n\n## 優點\n- 核心邏輯可獨立測試（無須啟動資料庫/伺服器）\n- 框架可抽換（今天用 Fastify，明天換 Hono）\n- 易於導入 Event-Driven 與 DAG Pipeline\n\n## 對照 PLKS\n- Entities → [concept.node.ts](file:///C:/project_Code/PLKS/apps/api/src/core/entities/concept.node.ts)\n- Use Cases → modules/orchestrator/*\n- Interface Adapters → @plks/shared/contracts\n- Frameworks → @aws-sdk/client-s3、Fastify\n`;
 
-  const node2 =
-    frontmatter(CONCEPT_2_ID, "Presigned URL", ["Clean Architecture", "Backblaze B2"], "00:02:15") +
-    `# Presigned URL\n\n**預簽名 URL** 是一種暫時性、帶有簽名的存取位址，常用於：\n\n- 讓瀏覽器/第三方 API 直接讀取私有物件\n- 讓前端直接上傳檔案至 S3/B2，不經過後端串流\n\n## 關鍵屬性\n| 項目 | 說明 |\n|------|------|\n| 時效 | 幾秒到數小時（建議 5-15 分鐘） |\n| 權限 | 由產生者決定 GET/PUT/DELETE |\n| 鑑別 | 以 Access Key 簽名，B2 端驗證 |\n\n## PLKS 時機\n- [[DAG Node B]]：為 slide 圖片簽名，交給 NIM 多模態模型讀取\n- Ingestion Upload：前端直傳音檔/簡報至 B2 inbox\n\n> ⚠️ 絕對不要把 Presigned URL 寫進 Git、Log 或回應給未驗證的用戶\n`;
+  const node2 = `${frontmatter(CONCEPT_2_ID, "Presigned URL", ["Clean Architecture", "Backblaze B2"], "00:02:15")}# Presigned URL\n\n**預簽名 URL** 是一種暫時性、帶有簽名的存取位址，常用於：\n\n- 讓瀏覽器/第三方 API 直接讀取私有物件\n- 讓前端直接上傳檔案至 S3/B2，不經過後端串流\n\n## 關鍵屬性\n| 項目 | 說明 |\n|------|------|\n| 時效 | 幾秒到數小時（建議 5-15 分鐘） |\n| 權限 | 由產生者決定 GET/PUT/DELETE |\n| 鑑別 | 以 Access Key 簽名，B2 端驗證 |\n\n## PLKS 時機\n- [[DAG Node B]]：為 slide 圖片簽名，交給 NIM 多模態模型讀取\n- Ingestion Upload：前端直傳音檔/簡報至 B2 inbox\n\n> ⚠️ 絕對不要把 Presigned URL 寫進 Git、Log 或回應給未驗證的用戶\n`;
 
-  const node3 =
-    frontmatter(CONCEPT_3_ID, "DAG 引擎", ["Clean Architecture", "Presigned URL"], "00:05:30") +
-    `# DAG 執行引擎\n\n**DAG = Directed Acyclic Graph (有向無環圖)**，是 PLKS Orchestrator 的核心執行模型：\n\n## 六個節點 (Node A-F)\n1. **Node A — Load Data**：讀取 RawAssetPayload\n2. **Node B — B2 URL Signing**：[[Presigned URL]] 簽名\n3. **Node C — Prompt Assembly**：text + image URLs 交錯\n4. **Node D — AI Execution**：並行呼叫 NIM\n5. **Node E — Validation**：Zod Schema 驗證 + 重試\n6. **Node F — Persistence**：寫入 [[Obsidian Markdown]] 與 _quiz JSON\n\n## 特點\n- 無狀態：Pod 重啟後可從失敗節點 resume\n- 可觀測：每節點有輸入/輸出快照儲存於 /processing/\n- 易重試：單節點重試 = Node.retry(input)\n`;
+  const node3 = `${frontmatter(CONCEPT_3_ID, "DAG 引擎", ["Clean Architecture", "Presigned URL"], "00:05:30")}# DAG 執行引擎\n\n**DAG = Directed Acyclic Graph (有向無環圖)**，是 PLKS Orchestrator 的核心執行模型：\n\n## 六個節點 (Node A-F)\n1. **Node A — Load Data**：讀取 RawAssetPayload\n2. **Node B — B2 URL Signing**：[[Presigned URL]] 簽名\n3. **Node C — Prompt Assembly**：text + image URLs 交錯\n4. **Node D — AI Execution**：並行呼叫 NIM\n5. **Node E — Validation**：Zod Schema 驗證 + 重試\n6. **Node F — Persistence**：寫入 [[Obsidian Markdown]] 與 _quiz JSON\n\n## 特點\n- 無狀態：Pod 重啟後可從失敗節點 resume\n- 可觀測：每節點有輸入/輸出快照儲存於 /processing/\n- 易重試：單節點重試 = Node.retry(input)\n`;
 
   await put(`${vault}/Clean-Architecture.md`, node1, "text/markdown");
   await put(`${vault}/Presigned-URL.md`, node2, "text/markdown");

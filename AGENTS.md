@@ -15,6 +15,10 @@
 | **狀態管理** | 無狀態運算。結構化持久化狀態在 Supabase，大型檔案在 B2。 |
 | **單一真相來源 (Structured)** | Supabase (PostgreSQL) with RLS |
 | **單一真相來源 (Blobs)** | Backblaze B2 Object Storage (S3-Compatible API) |
+| **課程結構** | 大學 8 學期分區 (1上、1下、2上、2下、3上、3下、4上、4下)，用戶可於當學期新增課程 |
+| **使用者模式** | 單一使用者 (無多租戶複雜度) |
+| **認證方式** | Supabase Auth (Email Magic Link) |
+| **部署目標** | Vercel (Hobby) + Supabase (免費額度) + Backblaze B2 (免費額度) |
 
 ### 核心原則
 - **依賴反轉**：業務邏輯只依賴介面 (`IStorageAdapter`、`IStructuredStore`、`IKnowledgeGraphWriter`、`IAIReasoningGateway`)，不依賴具體實作

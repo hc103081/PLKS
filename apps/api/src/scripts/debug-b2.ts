@@ -23,7 +23,7 @@ async function main() {
   console.log("Bucket:", bucket);
   console.log("Region:", region);
   console.log("Endpoint:", endpoint);
-  console.log("Key ID:", keyId.slice(0, 6) + "***");
+  console.log("Key ID:", `${keyId.slice(0, 6)}***`);
 
   const client = new S3Client({
     region,
@@ -40,7 +40,9 @@ async function main() {
     const result = await client.send(new ListObjectsV2Command({ Bucket: bucket, MaxKeys: 5 }));
     console.log("✅ List OK. Objects found:", result.KeyCount ?? 0);
     if (result.Contents) {
-      result.Contents.forEach((o) => console.log("  -", o.Key, "(", o.Size, "bytes)"));
+      for (const o of result.Contents) {
+        console.log("  -", o.Key, "(", o.Size, "bytes)");
+      }
     }
   } catch (err) {
     console.error("❌ List FAILED:", err instanceof Error ? err.message : err);
@@ -71,7 +73,7 @@ async function main() {
       new PutObjectCommand({ Bucket: bucket, Key: "_debug/signed-test.txt" }),
       { expiresIn: 900 },
     );
-    console.log("✅ Presigned URL OK:", url.slice(0, 80) + "...");
+    console.log("✅ Presigned URL OK:", `${url.slice(0, 80)}...`);
   } catch (err) {
     console.error("❌ Presigned FAILED:", err instanceof Error ? err.message : err);
   }

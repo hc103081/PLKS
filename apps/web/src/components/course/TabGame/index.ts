@@ -1,0 +1,1 @@
+export { TabGame } from "./TabGame";

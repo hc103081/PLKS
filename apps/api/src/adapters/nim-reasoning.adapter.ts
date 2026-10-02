@@ -139,14 +139,8 @@ export class NvidiaNimAdapter implements IAIReasoningGateway {
    * Call NVIDIA NIM API with multimodal input
    */
   private async callNim(prompt: string, imageUrls: string[]): Promise<NvidiaNimResponse> {
-    // Build messages array for chat completion format
-    // Include system message for JSON mode enforcement
+    // Build single user message with multimodal content (text + images)
     const messages = [
-      {
-        role: "system" as const,
-        content:
-          "You are a helpful assistant that ONLY outputs valid JSON. Do not include any explanation, markdown, or extra text. Output raw JSON only.",
-      },
       {
         role: "user" as const,
         content: this.buildMultimodalContent(prompt, imageUrls),
@@ -164,7 +158,7 @@ export class NvidiaNimAdapter implements IAIReasoningGateway {
         messages,
         temperature: 0.1, // Low temperature for consistent structured output
         max_tokens: 4096,
-        // response_format: { type: "json_object" }, // Not all models support this
+        response_format: { type: "json_object" },
       }),
     });
 

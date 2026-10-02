@@ -2,8 +2,8 @@
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022"],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
@@ -17,7 +17,7 @@
     "declaration": true,
     "declarationMap": true,
     "noEmit": true,
-    "baseUrl": "."
+    "baseUrl": "../../"
   },
   "exclude": ["node_modules", "dist", ".turbo"]
 }

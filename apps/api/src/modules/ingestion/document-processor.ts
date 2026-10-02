@@ -48,7 +48,7 @@ export class DocumentProcessor {
    * This is a mock implementation - in production use pdf2pic or pdf-poppler
    */
   private async convertPdfToImages(
-    filePath: string,
+    _filePath: string,
     fileName: string,
   ): Promise<Result<VisualAsset[], DomainError>> {
     try {
@@ -94,7 +94,7 @@ export class DocumentProcessor {
    * This is a mock implementation - in production use LibreOffice + pdf2pic
    */
   private async convertPptToImages(
-    filePath: string,
+    _filePath: string,
     fileName: string,
   ): Promise<Result<VisualAsset[], DomainError>> {
     try {

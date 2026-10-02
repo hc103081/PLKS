@@ -3,7 +3,7 @@ import type { Result } from "neverthrow";
 import { err, ok } from "neverthrow";
 import { DomainError } from "../errors/domain-errors.js";
 
-export type DagContext = {};
+export type DagContext = Record<string, unknown>;
 
 export interface DagNode<T extends DagContext> {
   name: string;
@@ -108,7 +108,10 @@ export class DagEngine<T extends DagContext> {
 
     // Kahn's algorithm
     while (queue.length > 0) {
-      const current = queue.shift()!;
+      const current = queue.shift();
+      if (current === undefined) {
+        throw new Error("Invariant: queue should not be empty");
+      }
       result.push(current);
 
       const neighbors = this.reverseAdjacency.get(current) ?? [];
@@ -164,10 +167,13 @@ export class DagEngine<T extends DagContext> {
     const levels = this.computeLevels(sortedNodes);
 
     for (const level of levels) {
-      // Execute all nodes in this level in parallel
+      // Execute all nodes in this level nodes in parallel
       const results = await Promise.all(
         level.map(async (nodeName) => {
-          const node = this.nodes.get(nodeName)!;
+          const node = this.nodes.get(nodeName);
+          if (!node) {
+            throw new Error(`Node not found: ${nodeName}`);
+          }
           return this.executeWithRetry(node, currentContext);
         }),
       );

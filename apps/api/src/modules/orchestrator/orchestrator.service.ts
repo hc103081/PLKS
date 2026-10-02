@@ -22,7 +22,7 @@ export interface OrchestratorServiceInterface {
 
 export function createOrchestratorService(
   sessionStore: SessionStateStore,
-  pipelineNodes: PipelineNodes,
+  _pipelineNodes: PipelineNodes,
   dagEngine: DagEngine<PipelineContext>,
 ): OrchestratorServiceInterface {
   const startSession = async (

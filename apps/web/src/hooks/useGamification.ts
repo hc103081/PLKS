@@ -1,8 +1,8 @@
 // apps/web/src/hooks/useGamification.ts
 import { useCallback, useState } from "react";
-import { getGameState, requestSidekickHelp, startGame, submitAnswer } from "../services/api.js";
-import { useGameStore } from "../store/gameStore.js";
-import type { GameSession, QuizItemPayload, SidekickResponse } from "../types/api.js";
+import { getGameState, requestSidekickHelp, startGame, submitAnswer } from "../services/api";
+import { useGameStore } from "../store/gameStore";
+import type { GameSession, QuizItemPayload, SidekickResponse } from "../types/api";
 
 export function useGamification() {
   const {

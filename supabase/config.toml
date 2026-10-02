@@ -1,0 +1,27 @@
+[api]
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 17
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://localhost:54321"
+
+[inbucket]
+enabled = true
+port = 54324
+smtp_port = 54325
+
+[edge_runtime]
+policy = "per_worker"
+
+[functions]
+  [functions.export-to-b2]
+  verify_jwt = false
+  import_map = "./functions/export-to-b2/deno.json"

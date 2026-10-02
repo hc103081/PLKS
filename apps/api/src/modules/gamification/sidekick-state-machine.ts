@@ -265,7 +265,7 @@ export class SidekickStateMachine {
         if (parsed) map.set(parsed.conceptId, parsed);
       }
       return ok(map);
-    } catch (cause) {
+    } catch (_cause) {
       return ok(new Map());
     }
   }

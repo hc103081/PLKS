@@ -26,6 +26,7 @@ const { container } = await import("tsyringe");
 const { B2StorageAdapter } = await import("./adapters/b2-storage.adapter.js");
 const { NvidiaNimAdapter } = await import("./adapters/nim-reasoning.adapter.js");
 const { ObsidianMarkdownWriter } = await import("./adapters/obsidian-markdown.writer.js");
+const { SupabaseStructuredStore } = await import("./adapters/supabase-structured-store.adapter.js");
 
 // Import DI registration
 const { registerAdapters } = await import("./config/di.js");
@@ -47,15 +48,19 @@ const { createGamificationService } = await import(
 );
 const { registerGamificationRoutes } = await import("./routes/gamification.js");
 
+// Import courses components
+const { registerCoursesRoutes } = await import("./routes/courses.js");
+
 const env = loadEnv();
 
 // Initialize adapters
 const storageAdapter = new B2StorageAdapter();
 const aiReasoningGateway = new NvidiaNimAdapter();
 const knowledgeGraphWriter = new ObsidianMarkdownWriter(storageAdapter);
+const structuredStore = new SupabaseStructuredStore();
 
 // Register adapters in DI container
-registerAdapters(storageAdapter, knowledgeGraphWriter, aiReasoningGateway);
+registerAdapters(storageAdapter, knowledgeGraphWriter, aiReasoningGateway, structuredStore);
 
 // Initialize orchestrator components
 const sessionStore = new SessionStateStore(storageAdapter);
@@ -155,6 +160,9 @@ registerIngestionRoutes(app, ingestionPipeline, env.API_PREFIX);
 
 // Register gamification routes
 registerGamificationRoutes(app, gamificationService, env.API_PREFIX);
+
+// Register courses routes
+registerCoursesRoutes(app, structuredStore, env.API_PREFIX);
 
 async function start(): Promise<void> {
   try {

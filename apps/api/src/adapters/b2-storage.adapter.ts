@@ -88,7 +88,7 @@ export class B2StorageAdapter implements IStorageAdapter {
         !uri.startsWith("http")
       ) {
         try {
-          const key = "/" + (uri.startsWith("/") ? uri.slice(1) : uri);
+          const key = `/${uri.startsWith("/") ? uri.slice(1) : uri}`;
           const command = new GetObjectCommand({ Bucket: this.bucket, Key: key });
           const response = await this.client.send(command);
           if (response.Body) {
@@ -145,7 +145,7 @@ export class B2StorageAdapter implements IStorageAdapter {
    */
   private resolveKey(uri: string): string {
     const prefixS3 = `s3://${this.bucket}/`;
-    const prefixHttps1 = `https://${this.bucket}.`;
+    const _prefixHttps1 = `https://${this.bucket}.`;
     const prefixHttps2 = `https://${process.env["B2_ENDPOINT"]?.replace(/^https?:\/\//, "") ?? ""}/${this.bucket}/`;
 
     if (uri.startsWith(prefixS3)) {
@@ -169,6 +169,14 @@ export class B2StorageAdapter implements IStorageAdapter {
    * @deprecated Use resolveKey instead
    */
   private extractKeyFromUri(uri: string): string {
+    // Validate URI format - must be s3:// or https://
+    if (!uri.startsWith("s3://") && !uri.startsWith("https://") && !uri.startsWith("http://")) {
+      throw new DomainError(
+        "INVALID_URI_FORMAT",
+        `Invalid URI format: ${uri}. Must start with s3://, https://, or http://`,
+        { uri },
+      );
+    }
     return this.resolveKey(uri);
   }
 

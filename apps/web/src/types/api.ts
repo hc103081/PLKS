@@ -103,6 +103,45 @@ export interface SidekickResponse {
   relatedSlideUris: string[];
 }
 
+/** Game Session State - used by TabGame for local UI state */
+export interface GameSessionState {
+  sessionId: string;
+  courseId: string;
+  currentQuizIndex: number;
+  totalQuizzes: number;
+  score: number;
+  streak: number;
+  maxStreak: number;
+  xp: number;
+  level: number;
+  answers: GameAnswer[];
+  sidekickOpen: boolean;
+  sidekickHistory: SidekickMessage[];
+  startedAt: string;
+  completedAt?: string;
+}
+
+/** Game Answer */
+export interface GameAnswer {
+  quizId: string;
+  userAnswer: string;
+  isCorrect: boolean;
+  timeSpentMs: number;
+  xpEarned: number;
+  sidekickUsed: boolean;
+}
+
+/** Sidekick Message */
+export interface SidekickMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: string;
+  relatedConceptIds?: string[];
+  relatedSlideUris?: string[];
+  isStreaming?: boolean;
+}
+
 export interface GameSession {
   sessionId: string;
   courseId: string;
@@ -120,3 +159,6 @@ export interface GameSession {
   createdAt: string;
   updatedAt: string;
 }
+
+// Alias for QuizItemPayload for backward compatibility
+export type QuizItem = QuizItemPayload;

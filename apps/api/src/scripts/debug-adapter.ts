@@ -11,7 +11,7 @@ console.log(
   "ENDPOINT=",
   process.env["B2_ENDPOINT"],
   "KEYID prefix=",
-  (process.env["B2_APPLICATION_KEY_ID"] ?? "").slice(0, 8) + "***",
+  `${(process.env["B2_APPLICATION_KEY_ID"] ?? "").slice(0, 8)}***`,
   "REGION=",
   process.env["B2_REGION"],
 );
@@ -71,14 +71,19 @@ async function main() {
   console.log("\n=== Test 4: listDirectory vault/CS101/ ===");
   const l1 = await adapter.listDirectory("vault/CS101/");
   console.log("isOk?", l1.isOk());
-  if (l1.isOk()) l1.value.forEach((u) => console.log(" -", u));
-  else console.log("ERR code=", l1.error.code, "msg=", l1.error.message);
+  if (l1.isOk()) {
+    for (const u of l1.value) {
+      console.log(" -", u);
+    }
+  } else {
+    console.log("ERR code=", l1.error.code, "msg=", l1.error.message);
+  }
 
   // 5. generatePresignedUrl for an existing object
   console.log("\n=== Test 5: generatePresignedUrl ===");
   const p1 = await adapter.generatePresignedUrl("s3://test/vault/CS101/_quiz/CS101.json", 900);
   console.log("isOk?", p1.isOk());
-  if (p1.isOk()) console.log("URL:", p1.value.slice(0, 100) + "...");
+  if (p1.isOk()) console.log("URL:", `${p1.value.slice(0, 100)}...`);
   else console.log("ERR code=", p1.error.code, "msg=", p1.error.message);
 
   // 6. upload + download a small file

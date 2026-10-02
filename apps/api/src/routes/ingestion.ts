@@ -20,7 +20,7 @@ function createIngestFileHandler(ingestionPipeline: IngestionPipeline): RouteHan
     }
 
     // Use Fastify's multipart handler (requires @fastify/multipart plugin)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny: Fastify request file() method not typed without plugin
     const data = (await (request as any).file()) as MultipartFile | null;
     if (!data) {
       return reply.status(400).send({ error: "No file uploaded" });
@@ -29,7 +29,7 @@ function createIngestFileHandler(ingestionPipeline: IngestionPipeline): RouteHan
     const fileBuffer = await data.toBuffer();
 
     // Parse optional courseId from form fields
-    const courseId = data.fields["courseId"];
+    const _courseId = data.fields["courseId"];
 
     const result = await ingestionPipeline.processFileManually(data.filename, fileBuffer);
 
@@ -47,7 +47,7 @@ function createIngestFileHandler(ingestionPipeline: IngestionPipeline): RouteHan
 }
 
 function createIngestStatusHandler(ingestionPipeline: IngestionPipeline): RouteHandlerMethod {
-  return async (request, reply) => {
+  return async (_request, reply) => {
     // For now, return a simple status
     // In production, query the processing directory or session store
     return reply.status(200).send({

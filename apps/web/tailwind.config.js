@@ -5,7 +5,211 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        'tertiary-fixed': '#f0dbff',
+        'surface': '#0B0F17',
+        'on-error': '#690005',
+        'on-background': '#F8FAFC',
+        'secondary-fixed-dim': '#7bd0ff',
+        'on-surface-variant': '#94A3B8',
+        'outline': '#334155',
+        'error-container': '#93000a',
+        'error': '#F43F5E',
+        'on-secondary-fixed': '#001e2c',
+        'surface-container-lowest': '#070B11',
+        'on-primary': '#ffffff',
+        'inverse-on-surface': '#2c3039',
+        'surface-bright': '#1E293B',
+        'on-secondary-container': '#00374d',
+        'tertiary-fixed-dim': '#ddb7ff',
+        'surface-dim': '#0B0F17',
+        'primary-fixed-dim': '#c0c1ff',
+        'surface-tint': '#6366F1',
+        'surface-container-highest': '#283548',
+        'tertiary-container': '#10B981',
+        'inverse-surface': '#dfe2ee',
+        'secondary-container': '#38BDF8',
+        'on-primary-container': '#ffffff',
+        'on-primary-fixed-variant': '#c7d2fe',
+        'on-tertiary-container': '#022c22',
+        'surface-variant': '#182234',
+        'on-secondary': '#00354a',
+        'secondary': '#38BDF8',
+        'surface-container-low': '#0F172A',
+        'on-error-container': '#ffe4e6',
+        'background': '#0B0F17',
+        'on-tertiary-fixed': '#2c0051',
+        'on-surface': '#F8FAFC',
+        'primary': '#6366F1',
+        'on-tertiary-fixed-variant': '#6900b3',
+        'on-primary-fixed': '#07006c',
+        'primary-fixed': '#312E81',
+        'on-tertiary': '#ffffff',
+        'inverse-primary': '#494bd6',
+        'tertiary': '#10B981',
+        'outline-variant': '#1E293B',
+        'primary-container': '#4F46E5',
+        'surface-container-high': '#1E293B',
+        'secondary-fixed': '#c4e7ff',
+        'surface-container': '#131C2E',
+        'on-secondary-fixed-variant': '#004c69',
+      },
+      borderRadius: {
+        'DEFAULT': '0.25rem',
+        'lg': '0.5rem',
+        'xl': '0.75rem',
+        '2xl': '1rem',
+        'full': '9999px'
+      },
+      spacing: {
+        'space-md': '1rem',
+        'margin-mobile': '1rem',
+        'margin': '2rem',
+        'space-xl': '2.5rem',
+        'space-lg': '1.5rem',
+        'gutter-mobile': '0.75rem',
+        'gutter': '1.5rem',
+        'space-xs': '0.25rem',
+        'space-sm': '0.5rem'
+      },
+      fontFamily: {
+        'body-lg': [
+          'Plus Jakarta Sans', 'Inter', 'sans-serif'
+        ],
+        'headline-sm': [
+          'Plus Jakarta Sans', 'sans-serif'
+        ],
+        'title-md': [
+          'Plus Jakarta Sans', 'sans-serif'
+        ],
+        'label-caps': [
+          'JetBrains Mono', 'monospace'
+        ],
+        'headline-lg': [
+          'Plus Jakarta Sans', 'sans-serif'
+        ],
+        'headline-md': [
+          'Plus Jakarta Sans', 'sans-serif'
+        ],
+        'label-code-sm': [
+          'JetBrains Mono', 'monospace'
+        ],
+        'display-lg': [
+          'Plus Jakarta Sans', 'sans-serif'
+        ],
+        'body-md': [
+          'Plus Jakarta Sans', 'Inter', 'sans-serif'
+        ],
+        'body-sm': [
+          'Plus Jakarta Sans', 'Inter', 'sans-serif'
+        ],
+        'headline-lg-mobile': [
+          'Plus Jakarta Sans', 'sans-serif'
+        ],
+        'label-code-md': [
+          'JetBrains Mono', 'monospace'
+        ]
+      },
+      fontSize: {
+        'body-lg': [
+          '1rem',
+          {
+            'lineHeight': '1.625rem',
+            'letterSpacing': '0',
+            'fontWeight': '400'
+          }
+        ],
+        'headline-sm': [
+          '1.25rem',
+          {
+            'lineHeight': '1.75rem',
+            'letterSpacing': '-0.01em',
+            'fontWeight': '600'
+          }
+        ],
+        'title-md': [
+          '1.125rem',
+          {
+            'lineHeight': '1.625rem',
+            'letterSpacing': '-0.005em',
+            'fontWeight': '600'
+          }
+        ],
+        'label-caps': [
+          '0.6875rem',
+          {
+            'lineHeight': '1rem',
+            'letterSpacing': '0.08em',
+            'fontWeight': '600'
+          }
+        ],
+        'headline-lg': [
+          '2.25rem',
+          {
+            'lineHeight': '2.75rem',
+            'letterSpacing': '-0.02em',
+            'fontWeight': '700'
+          }
+        ],
+        'headline-md': [
+          '1.5rem',
+          {
+            'lineHeight': '2rem',
+            'letterSpacing': '-0.015em',
+            'fontWeight': '600'
+          }
+        ],
+        'label-code-sm': [
+          '0.75rem',
+          {
+            'lineHeight': '1.125rem',
+            'letterSpacing': '0.02em',
+            'fontWeight': '500'
+          }
+        ],
+        'display-lg': [
+          '3.5rem',
+          {
+            'lineHeight': '4.25rem',
+            'letterSpacing': '-0.03em',
+            'fontWeight': '700'
+          }
+        ],
+        'body-md': [
+          '0.875rem',
+          {
+            'lineHeight': '1.5rem',
+            'letterSpacing': '0',
+            'fontWeight': '400'
+          }
+        ],
+        'body-sm': [
+          '0.75rem',
+          {
+            'lineHeight': '1.25rem',
+            'letterSpacing': '0.01em',
+            'fontWeight': '400'
+          }
+        ],
+        'headline-lg-mobile': [
+          '1.75rem',
+          {
+            'lineHeight': '2.25rem',
+            'letterSpacing': '-0.015em',
+            'fontWeight': '700'
+          }
+        ],
+        'label-code-md': [
+          '0.875rem',
+          {
+            'lineHeight': '1.375rem',
+            'letterSpacing': '-0.01em',
+            'fontWeight': '500'
+          }
+        ]
+      }
+    },
   },
   plugins: [],
 }

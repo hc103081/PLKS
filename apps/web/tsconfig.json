@@ -6,10 +6,10 @@
     "composite": true,
     "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo",
     "jsx": "react-jsx",
-    "types": ["vite/client"],
+    "types": ["vite/client", "@testing-library/jest-dom"],
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "allowImportingTsExtensions": true
   },
-  "include": ["src/**/*", "tests/**/*", "vite.config.ts"],
+  "include": ["src/**/*", "tests/**/*", "vite.config.ts", "vitest.d.ts"],
   "exclude": ["node_modules", "dist"]
 }

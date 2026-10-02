@@ -10,7 +10,7 @@ import { type Result, err, ok } from "neverthrow";
 import { RawAsset } from "../../core/entities/raw-asset.js";
 import { DomainError } from "../../core/errors/domain-errors.js";
 
-export interface PipelineContext {
+export interface PipelineContext extends Record<string, unknown> {
   sessionId: string;
   courseId: string;
   rawAsset?: RawAssetPayload;
