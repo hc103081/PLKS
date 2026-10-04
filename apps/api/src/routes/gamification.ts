@@ -3,25 +3,25 @@ import type { FastifyInstance, RouteHandlerMethod } from "fastify";
 import { z } from "zod";
 import type { GamificationServiceInterface } from "../modules/gamification/gamification.service.js";
 
-const StartGameBodySchema = z.object({
-  courseId: z.string().min(1),
-});
-
-const SubmitAnswerBodySchema = z.object({
-  sessionId: z.string().uuid(),
-  userAnswer: z.string().min(1),
-  timeSpentMs: z.number().int().positive(),
-});
-
 const SessionParamsSchema = z.object({
   sessionId: z.string().uuid(),
 });
 
-function createStartGameHandler(gamification: GamificationServiceInterface): RouteHandlerMethod {
+const CourseParamsSchema = z.object({
+  courseId: z.string().min(1),
+});
+
+const AnswerBodySchema = z.object({
+  sessionId: z.string().uuid(),
+  userAnswer: z.string(),
+  timeSpentMs: z.number().int().positive(),
+});
+
+export function createStartGameHandler(gamification: GamificationServiceInterface): RouteHandlerMethod {
   return async (request, reply) => {
-    const parseResult = StartGameBodySchema.safeParse(request.body);
+    const parseResult = CourseParamsSchema.safeParse(request.params);
     if (!parseResult.success) {
-      return reply.status(400).send({ error: "Invalid request body" });
+      return reply.status(400).send({ error: "Invalid courseId" });
     }
 
     const { courseId } = parseResult.data;
@@ -38,9 +38,9 @@ function createStartGameHandler(gamification: GamificationServiceInterface): Rou
   };
 }
 
-function createSubmitAnswerHandler(gamification: GamificationServiceInterface): RouteHandlerMethod {
+export function createSubmitAnswerHandler(gamification: GamificationServiceInterface): RouteHandlerMethod {
   return async (request, reply) => {
-    const parseResult = SubmitAnswerBodySchema.safeParse(request.body);
+    const parseResult = AnswerBodySchema.safeParse(request.body);
     if (!parseResult.success) {
       return reply.status(400).send({ error: "Invalid request body" });
     }
@@ -59,9 +59,9 @@ function createSubmitAnswerHandler(gamification: GamificationServiceInterface): 
   };
 }
 
-function createRequestHelpHandler(gamification: GamificationServiceInterface): RouteHandlerMethod {
+export function createRequestHelpHandler(gamification: GamificationServiceInterface): RouteHandlerMethod {
   return async (request, reply) => {
-    const parseResult = SessionParamsSchema.safeParse(request.body);
+    const parseResult = SessionParamsSchema.safeParse(request.params);
     if (!parseResult.success) {
       return reply.status(400).send({ error: "Invalid sessionId" });
     }
@@ -80,7 +80,7 @@ function createRequestHelpHandler(gamification: GamificationServiceInterface): R
   };
 }
 
-function createGetGameStateHandler(gamification: GamificationServiceInterface): RouteHandlerMethod {
+export function createGetGameStateHandler(gamification: GamificationServiceInterface): RouteHandlerMethod {
   return async (request, reply) => {
     const parseResult = SessionParamsSchema.safeParse(request.params);
     if (!parseResult.success) {
@@ -111,12 +111,13 @@ export function registerGamificationRoutes(
   const requestHelpHandler = createRequestHelpHandler(gamification);
   const getGameStateHandler = createGetGameStateHandler(gamification);
 
-  app.post(`${prefix}/gamification/start`, startGameHandler);
+  app.post(`${prefix}/gamification/quiz/:courseId`, startGameHandler);
   app.post(`${prefix}/gamification/answer`, submitAnswerHandler);
   app.post(`${prefix}/gamification/sidekick`, requestHelpHandler);
-  app.get(`${prefix}/gamification/state/:sessionId`, getGameStateHandler);
+  app.get(`${prefix}/gamification/session/:sessionId`, getGameStateHandler);
 }
 
+// Export handlers for testing
 export const startGameHandler = createStartGameHandler;
 export const submitAnswerHandler = createSubmitAnswerHandler;
 export const requestHelpHandler = createRequestHelpHandler;
