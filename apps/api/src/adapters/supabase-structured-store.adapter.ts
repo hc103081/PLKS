@@ -334,20 +334,106 @@ export class SupabaseStructuredStore implements IStructuredStore {
     }
   }
 
-  async upsertProgress(_progress: ProgressInput): Promise<void> {
-    throw new DomainError("NOT_IMPLEMENTED", "Method not implemented");
+  async upsertProgress(progress: ProgressInput): Promise<void> {
+    try {
+      const userId = this.getUserId();
+      const { error } = await this.supabase
+        .from("user_progress")
+        .upsert({
+          concept_id: progress.concept_id,
+          course_id: progress.course_id,
+          user_id: userId,
+          created_at: progress.created_at,
+          due_date: progress.due_date,
+          ease_factor: progress.ease_factor,
+          id: progress.id,
+          interval_days: progress.interval_days,
+          last_reviewed_at: progress.last_reviewed_at,
+          repetitions: progress.repetitions,
+          updated_at: progress.updated_at,
+        });
+
+      if (error) throw error;
+    } catch (cause) {
+      throw new DomainError("PROGRESS_UPLOAD_FAILED", "Failed to upload progress", cause);
+    }
   }
-  async getDueReviews(_userId: string, _courseId: string, _limit: number): Promise<Progress[]> {
-    throw new DomainError("NOT_IMPLEMENTED", "Method not implemented");
+  async getDueReviews(userId: string, courseId: string, limit: number): Promise<Progress[]> {
+    try {
+      const { data, error } = await this.supabase
+        .from("user_progress")
+        .select("*")
+        .eq("course_id", courseId)
+        .eq("user_id", userId)
+        .lte("due_date", new Date().toISOString().split("T")[0])
+        .order("due_date", { ascending: true })
+        .limit(limit);
+
+      if (error) throw error;
+      return data as Progress[];
+    } catch (cause) {
+      throw new DomainError(
+        "PROGRESS_FETCH_FAILED",
+        `Failed to fetch due reviews for course ${courseId}`,
+        cause,
+      );
+    }
   }
-  async logAnswer(_log: AnswerLogInput): Promise<void> {
-    throw new DomainError("NOT_IMPLEMENTED", "Method not implemented");
+  async logAnswer(log: AnswerLogInput): Promise<void> {
+    try {
+      const { error } = await this.supabase
+        .from("answer_logs")
+        .insert({
+          course_id: log.course_id,
+          id: log.id,
+          is_correct: log.is_correct,
+          quiz_id: log.quiz_id,
+          response_time_ms: log.response_time_ms,
+          sidekick_context: log.sidekick_context,
+          sidekick_used: log.sidekick_used,
+          user_answer: log.user_answer,
+          user_id: this.getUserId(),
+        });
+
+      if (error) throw error;
+    } catch (cause) {
+      throw new DomainError("ANSWER_LOG_FAILED", "Failed to log answer", cause);
+    }
   }
-  async getChatHistory(_sessionId: string): Promise<ChatMessage[]> {
-    throw new DomainError("NOT_IMPLEMENTED", "Method not implemented");
+  async getChatHistory(sessionId: string): Promise<ChatMessage[]> {
+    try {
+      const { data, error } = await this.supabase
+        .from("chat_messages")
+        .select("*")
+        .eq("session_id", sessionId)
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+      return data as ChatMessage[];
+    } catch (cause) {
+      throw new DomainError(
+        "CHAT_HISTORY_FETCH_FAILED",
+        `Failed to fetch chat history for session ${sessionId}`,
+        cause,
+      );
+    }
   }
-  async appendChatMessage(_msg: ChatMessageInput): Promise<void> {
-    throw new DomainError("NOT_IMPLEMENTED", "Method not implemented");
+  async appendChatMessage(msg: ChatMessageInput): Promise<void> {
+    try {
+      const { error } = await this.supabase
+        .from("chat_messages")
+        .insert({
+          content: msg.content,
+          id: msg.id,
+          metadata: msg.metadata,
+          role: msg.role,
+          session_id: msg.session_id,
+        });
+
+      if (error) throw error;
+    } catch (cause) {
+      throw new DomainError("CHAT_APPEND_FAILED", "Failed to append chat message", cause);
+    }
   }
   subscribeProgress(): () => void {
     return () => {};
