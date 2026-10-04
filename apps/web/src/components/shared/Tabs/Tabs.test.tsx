@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { Tabs } from "./Tabs";
@@ -30,9 +30,7 @@ describe("Tabs", () => {
 
   it("應該在點擊標籤時呼叫 onChange", () => {
     const mockOnChange = vi.fn();
-    const { getByRole } = render(
-      <Tabs tabs={tabs} activeKey="tab1" onChange={mockOnChange} />,
-    );
+    const { getByRole } = render(<Tabs tabs={tabs} activeKey="tab1" onChange={mockOnChange} />);
 
     // Log all buttons to see what we're working with
     const buttons = screen.getAllByRole("button");

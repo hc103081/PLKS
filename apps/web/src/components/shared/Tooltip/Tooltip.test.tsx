@@ -19,7 +19,11 @@ describe("Tooltip", () => {
   });
 
   it("當 enabled=false 時不應該顯示提示內容", () => {
-    render(<Tooltip content="這是提示" enabled={false}>觸發</Tooltip>);
+    render(
+      <Tooltip content="這是提示" enabled={false}>
+        觸發
+      </Tooltip>,
+    );
     expect(screen.queryByText("這是提示")).not.toBeInTheDocument();
   });
 
@@ -30,25 +34,41 @@ describe("Tooltip", () => {
   });
 
   it("應該根據 placement=top 顯示頂部 tooltip", () => {
-    render(<Tooltip content="提示" placement="top">觸發</Tooltip>);
+    render(
+      <Tooltip content="提示" placement="top">
+        觸發
+      </Tooltip>,
+    );
     const tooltipElement = screen.getByText("提示");
     expect(tooltipElement).toHaveClass("tooltip-top");
   });
 
   it("應該根據 placement=bottom 顯示底部 tooltip", () => {
-    render(<Tooltip content="提示" placement="bottom">觸發</Tooltip>);
+    render(
+      <Tooltip content="提示" placement="bottom">
+        觸發
+      </Tooltip>,
+    );
     const tooltipElement = screen.getByText("提示");
     expect(tooltipElement).toHaveClass("tooltip-bottom");
   });
 
   it("應該根據 placement=left 顯示左側 tooltip", () => {
-    render(<Tooltip content="提示" placement="left">觸發</Tooltip>);
+    render(
+      <Tooltip content="提示" placement="left">
+        觸發
+      </Tooltip>,
+    );
     const tooltipElement = screen.getByText("提示");
     expect(tooltipElement).toHaveClass("tooltip-left");
   });
 
   it("應該根據 placement=right 顯示右側 tooltip", () => {
-    render(<Tooltip content="提示" placement="right">觸發</Tooltip>);
+    render(
+      <Tooltip content="提示" placement="right">
+        觸發
+      </Tooltip>,
+    );
     const tooltipElement = screen.getByText("提示");
     expect(tooltipElement).toHaveClass("tooltip-right");
   });

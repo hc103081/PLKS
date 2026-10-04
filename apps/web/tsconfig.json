@@ -6,7 +6,7 @@
     "composite": true,
     "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo",
     "jsx": "react-jsx",
-    "types": ["vite/client", "@testing-library/jest-dom"],
+    "types": ["vite/client"],
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "allowImportingTsExtensions": true
   },

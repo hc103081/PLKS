@@ -337,21 +337,19 @@ export class SupabaseStructuredStore implements IStructuredStore {
   async upsertProgress(progress: ProgressInput): Promise<void> {
     try {
       const userId = this.getUserId();
-      const { error } = await this.supabase
-        .from("user_progress")
-        .upsert({
-          concept_id: progress.concept_id,
-          course_id: progress.course_id,
-          user_id: userId,
-          created_at: progress.created_at,
-          due_date: progress.due_date,
-          ease_factor: progress.ease_factor,
-          id: progress.id,
-          interval_days: progress.interval_days,
-          last_reviewed_at: progress.last_reviewed_at,
-          repetitions: progress.repetitions,
-          updated_at: progress.updated_at,
-        });
+      const { error } = await this.supabase.from("user_progress").upsert({
+        concept_id: progress.concept_id,
+        course_id: progress.course_id,
+        user_id: userId,
+        created_at: progress.created_at,
+        due_date: progress.due_date,
+        ease_factor: progress.ease_factor,
+        id: progress.id,
+        interval_days: progress.interval_days,
+        last_reviewed_at: progress.last_reviewed_at,
+        repetitions: progress.repetitions,
+        updated_at: progress.updated_at,
+      });
 
       if (error) throw error;
     } catch (cause) {
@@ -381,19 +379,17 @@ export class SupabaseStructuredStore implements IStructuredStore {
   }
   async logAnswer(log: AnswerLogInput): Promise<void> {
     try {
-      const { error } = await this.supabase
-        .from("answer_logs")
-        .insert({
-          course_id: log.course_id,
-          id: log.id,
-          is_correct: log.is_correct,
-          quiz_id: log.quiz_id,
-          response_time_ms: log.response_time_ms,
-          sidekick_context: log.sidekick_context,
-          sidekick_used: log.sidekick_used,
-          user_answer: log.user_answer,
-          user_id: this.getUserId(),
-        });
+      const { error } = await this.supabase.from("answer_logs").insert({
+        course_id: log.course_id,
+        id: log.id,
+        is_correct: log.is_correct,
+        quiz_id: log.quiz_id,
+        response_time_ms: log.response_time_ms,
+        sidekick_context: log.sidekick_context,
+        sidekick_used: log.sidekick_used,
+        user_answer: log.user_answer,
+        user_id: this.getUserId(),
+      });
 
       if (error) throw error;
     } catch (cause) {
@@ -420,15 +416,13 @@ export class SupabaseStructuredStore implements IStructuredStore {
   }
   async appendChatMessage(msg: ChatMessageInput): Promise<void> {
     try {
-      const { error } = await this.supabase
-        .from("chat_messages")
-        .insert({
-          content: msg.content,
-          id: msg.id,
-          metadata: msg.metadata,
-          role: msg.role,
-          session_id: msg.session_id,
-        });
+      const { error } = await this.supabase.from("chat_messages").insert({
+        content: msg.content,
+        id: msg.id,
+        metadata: msg.metadata,
+        role: msg.role,
+        session_id: msg.session_id,
+      });
 
       if (error) throw error;
     } catch (cause) {
