@@ -67,8 +67,8 @@ export function DashboardEmptyState({
           {/* Vector Illustration & Constellation Halo */}
           <div className="relative w-72 h-64 sm:w-80 sm:h-72 flex items-center justify-center mb-6">
             {/* Soft background radial glows */}
-            <div className="absolute w-60 h-60 rounded-full bg-primary/10 blur-3xl -top-4 pointer-events-none"></div>
-            <div className="absolute w-48 h-48 rounded-full bg-secondary-container/15 blur-2xl -bottom-2 pointer-events-none"></div>
+            <div className="absolute w-60 h-60 rounded-full bg-primary/10 blur-3xl -top-4 pointer-events-none" />
+            <div className="absolute w-48 h-48 rounded-full bg-secondary-container/15 blur-2xl -bottom-2 pointer-events-none" />
             {/* Inline Detailed Futuristic Academic Desk & Constellation SVG */}
             <svg
               className="relative z-10 w-full h-full drop-shadow-[0_12px_32px_rgba(0,0,0,0.6)]"
@@ -77,7 +77,7 @@ export function DashboardEmptyState({
               xmlns="http://www.w3.org/2000/svg"
             >
               {/* Graph Grid Plane Perspective */}
-              <ellipse cx="160" cy="220" fill="#181c24" opacity="0.8" rx="130" ry="34"></ellipse>
+              <ellipse cx="160" cy="220" fill="#181c24" opacity="0.8" rx="130" ry="34" />
               <ellipse
                 className="text-primary"
                 cx="160"
@@ -87,20 +87,20 @@ export function DashboardEmptyState({
                 stroke="currentColor"
                 strokeDasharray="3 3"
                 strokeOpacity="0.25"
-              ></ellipse>
+              />
               {/* Desk Workspace Platform */}
-              <path d="M70 215 L160 240 L250 215 L160 190 Z" fill="#262a33"></path>
-              <path d="M70 215 L160 240 L160 246 L70 221 Z" fill="#1c2028"></path>
-              <path d="M250 215 L160 240 L160 246 L250 221 Z" fill="#181c24"></path>
+              <path d="M70 215 L160 240 L250 215 L160 190 Z" fill="#262a33" />
+              <path d="M70 215 L160 240 L160 246 L70 221 Z" fill="#1c2028" />
+              <path d="M250 215 L160 240 L160 246 L250 221 Z" fill="#181c24" />
               {/* Open Course Binder / Synthesizer Tome */}
-              <path d="M120 185 L160 195 L160 160 L120 152 Z" fill="#31353e"></path>
-              <path d="M200 185 L160 195 L160 160 L200 152 Z" fill="#353942"></path>
+              <path d="M120 185 L160 195 L160 160 L120 152 Z" fill="#31353e" />
+              <path d="M200 185 L160 195 L160 160 L200 152 Z" fill="#353942" />
               <path
                 d="M160 160 L160 195"
                 stroke="#7bd0ff"
                 strokeLinecap="round"
                 strokeWidth="1.5"
-              ></path>
+              />
               {/* Holographic Floating Node Network (Academic Knowledge Constellation) */}
               {/* Constellation Edges */}
               <line
@@ -112,7 +112,7 @@ export function DashboardEmptyState({
                 x2="105"
                 y1="130"
                 y2="90"
-              ></line>
+              />
               <line
                 stroke="#7bd0ff"
                 strokeDasharray="2 3"
@@ -122,7 +122,7 @@ export function DashboardEmptyState({
                 x2="215"
                 y1="130"
                 y2="85"
-              ></line>
+              />
               <line
                 stroke="#b76dff"
                 strokeOpacity="0.35"
@@ -131,7 +131,7 @@ export function DashboardEmptyState({
                 x2="160"
                 y1="90"
                 y2="52"
-              ></line>
+              />
               <line
                 stroke="#b76dff"
                 strokeOpacity="0.35"
@@ -140,7 +140,7 @@ export function DashboardEmptyState({
                 x2="160"
                 y1="85"
                 y2="52"
-              ></line>
+              />
               <line
                 stroke="#7bd0ff"
                 strokeDasharray="2 2"
@@ -150,7 +150,7 @@ export function DashboardEmptyState({
                 x2="68"
                 y1="90"
                 y2="120"
-              ></line>
+              />
               <line
                 stroke="#8083ff"
                 strokeDasharray="2 2"
@@ -160,11 +160,11 @@ export function DashboardEmptyState({
                 x2="252"
                 y1="85"
                 y2="122"
-              ></line>
+              />
               {/* Center Nucleus Node */}
-              <circle cx="160" cy="130" fill="#0f131c" r="14"></circle>
-              <circle cx="160" cy="130" fill="#8083ff" r="10"></circle>
-              <circle cx="160" cy="130" fill="#ffffff" r="4"></circle>
+              <circle cx="160" cy="130" fill="#0f131c" r="14" />
+              <circle cx="160" cy="130" fill="#8083ff" r="10" />
+              <circle cx="160" cy="130" fill="#ffffff" r="4" />
               <circle
                 cx="160"
                 cy="130"
@@ -172,10 +172,10 @@ export function DashboardEmptyState({
                 stroke="#8083ff"
                 strokeOpacity="0.4"
                 strokeWidth="1.5"
-              ></circle>
+              />
               {/* Knowledge Node Left (Raw Multimodal Inputs) */}
-              <circle cx="105" cy="90" fill="#0f131c" r="9"></circle>
-              <circle cx="105" cy="90" fill="#7bd0ff" r="6"></circle>
+              <circle cx="105" cy="90" fill="#0f131c" r="9" />
+              <circle cx="105" cy="90" fill="#7bd0ff" r="6" />
               <circle
                 cx="105"
                 cy="90"
@@ -183,10 +183,10 @@ export function DashboardEmptyState({
                 stroke="#7bd0ff"
                 strokeOpacity="0.3"
                 strokeWidth="1"
-              ></circle>
+              />
               {/* Knowledge Node Right (Synthesized Obsidian Wiki) */}
-              <circle cx="215" cy="85" fill="#0f131c" r="9"></circle>
-              <circle cx="215" cy="85" fill="#b76dff" r="6"></circle>
+              <circle cx="215" cy="85" fill="#0f131c" r="9" />
+              <circle cx="215" cy="85" fill="#b76dff" r="6" />
               <circle
                 cx="215"
                 cy="85"
@@ -194,9 +194,9 @@ export function DashboardEmptyState({
                 stroke="#b76dff"
                 strokeOpacity="0.3"
                 strokeWidth="1"
-              ></circle>
+              />
               {/* Apex AI Synthesis Node */}
-              <circle cx="160" cy="52" fill="#c0c1ff" r="7"></circle>
+              <circle cx="160" cy="52" fill="#c0c1ff" r="7" />
               <circle
                 cx="160"
                 cy="52"
@@ -204,24 +204,24 @@ export function DashboardEmptyState({
                 stroke="#c0c1ff"
                 strokeOpacity="0.4"
                 strokeWidth="1"
-              ></circle>
+              />
               {/* Secondary Outer Satellite Nodes */}
-              <circle cx="68" cy="120" fill="#7bd0ff" opacity="0.8" r="4.5"></circle>
-              <circle cx="252" cy="122" fill="#8083ff" opacity="0.8" r="4.5"></circle>
+              <circle cx="68" cy="120" fill="#7bd0ff" opacity="0.8" r="4.5" />
+              <circle cx="252" cy="122" fill="#8083ff" opacity="0.8" r="4.5" />
               {/* AI Vector Sparkles / Floating Glyphs */}
               <path
                 d="M225 42 L228 48 L234 51 L228 54 L225 60 L222 54 L216 51 L222 48 Z"
                 fill="#ddb7ff"
-              ></path>
+              />
               <path
                 d="M92 145 L94 149 L98 151 L94 153 L92 157 L90 153 L86 151 L90 149 Z"
                 fill="#7bd0ff"
-              ></path>
+              />
               <path
                 d="M157 95 L159 99 L163 101 L159 103 L157 107 L155 103 L151 101 L155 99 Z"
                 fill="#ffffff"
                 opacity="0.9"
-              ></path>
+              />
               {/* Flowing Data Light Conduits */}
               <path
                 d="M160 148 C160 162 160 166 160 178"
@@ -229,11 +229,11 @@ export function DashboardEmptyState({
                 strokeDasharray="1 4"
                 strokeLinecap="round"
                 strokeWidth="2"
-              ></path>
+              />
             </svg>
             {/* Status Microchip Badge overlay */}
             <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-surface-container-high shadow-lg flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-secondary-container"></span>
+              <span className="w-1.5 h-1.5 rounded-full bg-secondary-container" />
               <span className="font-label-code-sm text-label-code-sm text-on-surface-variant">
                 Cognitive Engine Standby
               </span>
@@ -299,7 +299,7 @@ export function DashboardEmptyState({
         <div className="w-full mt-14 pt-8">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2.5">
-              <div className="w-2 h-5 rounded-full bg-primary-container"></div>
+              <div className="w-2 h-5 rounded-full bg-primary-container" />
               <h2 className="font-title-md text-title-md text-on-surface font-semibold tracking-tight">
                 三步驟啟動學術知識管線 (Pipeline Overview)
               </h2>
@@ -445,7 +445,7 @@ export function DashboardEmptyState({
           {/* Counters Metrics Badge Strip */}
           <div className="flex items-center gap-2 w-full md:w-auto justify-end flex-wrap">
             <div className="px-3.5 py-1.5 rounded-lg bg-surface-container flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-secondary-container"></span>
+              <span className="w-2 h-2 rounded-full bg-secondary-container" />
               <span className="font-label-code-sm text-label-code-sm text-on-surface-variant">
                 進行中
               </span>
@@ -454,7 +454,7 @@ export function DashboardEmptyState({
               </span>
             </div>
             <div className="px-3.5 py-1.5 rounded-lg bg-surface-container flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-on-surface-variant"></span>
+              <span className="w-2 h-2 rounded-full bg-on-surface-variant" />
               <span className="font-label-code-sm text-label-code-sm text-on-surface-variant">
                 待上傳
               </span>
@@ -463,7 +463,7 @@ export function DashboardEmptyState({
               </span>
             </div>
             <div className="px-3.5 py-1.5 rounded-lg bg-surface-container flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-error"></span>
+              <span className="w-2 h-2 rounded-full bg-error" />
               <span className="font-label-code-sm text-label-code-sm text-on-surface-variant">
                 需重試
               </span>
@@ -497,7 +497,7 @@ export function DashboardEmptyState({
           <CreateCourseModal
             isOpen={showCreateModal}
             onClose={() => setShowCreateModal(false)}
-            onSubmit={async (data) => {
+            onSubmit={async (_data) => {
               // The actual submission is handled by the parent
               onCreateCourse();
               setShowCreateModal(false);
@@ -533,11 +533,11 @@ export function DashboardEmptyState({
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex-1 h-px bg-surface-container"></div>
+              <div className="flex-1 h-px bg-surface-container" />
               <span className="font-label-code-sm text-label-code-sm text-on-surface-variant">
                 或連結學校 iLMS 系統帳號
               </span>
-              <div className="flex-1 h-px bg-surface-container"></div>
+              <div className="flex-1 h-px bg-surface-container" />
             </div>
             <div className="p-4 rounded-xl bg-surface-container-lowest flex items-center justify-between">
               <div className="flex items-center gap-3">

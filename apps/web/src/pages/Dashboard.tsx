@@ -39,7 +39,7 @@ export function Dashboard() {
     healthPercentage: 100,
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [_error, setError] = useState<string | null>(null);
 
   const selectedSemester = SEMESTERS.find((s) => s.key === semesterFilter);
   const resolvedSemester = (selectedSemester ?? SEMESTERS[2]) as Semester;
@@ -59,7 +59,7 @@ export function Dashboard() {
       console.log("[Dashboard] fetch courses with semesterCode:", semesterCode);
       const coursesData = await getCourses(semesterCode);
       console.log("[Dashboard] coursesData:", coursesData);
-      if (coursesData && coursesData.courses) {
+      if (coursesData?.courses) {
         setCourses(coursesData.courses);
       } else {
         setCourses([]);
@@ -168,7 +168,7 @@ export function Dashboard() {
 
   const showEmptyState = courses.length === 0;
 
-  const currentSemesterLabel = `${resolvedSemester.year - 1911}-${resolvedSemester.term === 1 ? 1 : 2} ${resolvedSemester.label}`;
+  const _currentSemesterLabel = `${resolvedSemester.year - 1911}-${resolvedSemester.term === 1 ? 1 : 2} ${resolvedSemester.label}`;
 
   return (
     <div className="min-h-screen bg-[#0B0F17] font-body-md text-body-md text-[#F8FAFC] antialiased">
@@ -219,7 +219,7 @@ export function Dashboard() {
               </a>
             </nav>
             <div className="hidden xl:flex items-center gap-space-xs px-space-sm py-space-xs rounded-full bg-[#182234] border border-[#1E293B] text-[#94A3B8]">
-              <span className="w-2 h-2 rounded-full bg-[#10B981] shadow-[0_0_8px_#10B981] animate-pulse"></span>
+              <span className="w-2 h-2 rounded-full bg-[#10B981] shadow-[0_0_8px_#10B981] animate-pulse" />
               <span className="font-label-code-sm text-label-code-sm text-[#CBD5E1]">
                 索引管線就緒
               </span>
@@ -274,7 +274,7 @@ export function Dashboard() {
                 <span className="px-space-sm py-0.5 rounded-full bg-[#312E81]/80 border border-[#6366F1]/30 text-[#c7d2fe] font-label-code-sm text-label-code-sm tracking-wide uppercase font-semibold">
                   工作駕駛艙
                 </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] shadow-[0_0_6px_#10B981]"></span>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] shadow-[0_0_6px_#10B981]" />
                 <span className="font-label-code-sm text-label-code-sm text-[#94A3B8]">
                   實時同步 2 分鐘前
                 </span>
@@ -351,7 +351,7 @@ export function Dashboard() {
                       }`}
                     >
                       {isCurrent && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
                       )}
                       {isCurrent ? `113-2 ${s.label} (當前)` : s.label}
                     </button>
@@ -408,7 +408,13 @@ export function Dashboard() {
               </div>
 
               {/* 4. Pipeline Summary Bar - EXACTLY matching design */}
-              <PipelineSummary inProgress={pipelineSummary?.inProgress ?? 0} pending={pipelineSummary?.pending ?? 0} needsAttention={pipelineSummary?.needsAttention ?? 0} healthy={pipelineSummary?.healthy ?? true} healthPercentage={pipelineSummary?.healthPercentage ?? 0} />
+              <PipelineSummary
+                inProgress={pipelineSummary?.inProgress ?? 0}
+                pending={pipelineSummary?.pending ?? 0}
+                needsAttention={pipelineSummary?.needsAttention ?? 0}
+                healthy={pipelineSummary?.healthy ?? true}
+                healthPercentage={pipelineSummary?.healthPercentage ?? 0}
+              />
             </>
           )}
 

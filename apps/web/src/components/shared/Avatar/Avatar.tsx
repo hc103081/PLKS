@@ -59,7 +59,7 @@ export const Avatar: FC<AvatarProps> = ({
 
   // 點狀狀態指示器類別
   const statusDotClasses = statusColor
-    ? `absolute bottom-0 right-0 w-2 h-2 rounded-full border-2 border-surface-container-high`
+    ? "absolute bottom-0 right-0 w-2 h-2 rounded-full border-2 border-surface-container-high"
     : "";
 
   const statusColorMap = {

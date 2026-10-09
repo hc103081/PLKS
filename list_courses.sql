@@ -1,0 +1,1 @@
+SELECT id::text, user_id::text, code, name FROM public.courses;

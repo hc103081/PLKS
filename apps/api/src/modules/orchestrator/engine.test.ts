@@ -141,22 +141,22 @@ describe("OrchestratorDagEngine", () => {
       mockStorage.downloadFile.mockImplementation(async () => ok(Readable.from(rawAssetJson)));
       // Node B: generate presigned URLs (2 assets)
       mockStorage.generatePresignedUrl.mockImplementationOnce(
-        async (uri: string, expirySeconds: number) => ok("https://presigned/slide1.png"),
+        async (_uri: string, _expirySeconds: number) => ok("https://presigned/slide1.png"),
       );
       mockStorage.generatePresignedUrl.mockImplementationOnce(
-        async (uri: string, expirySeconds: number) => ok("https://presigned/slide2.png"),
+        async (_uri: string, _expirySeconds: number) => ok("https://presigned/slide2.png"),
       );
       // Node D: AI execution
       mockAiGateway.multimodalInfer.mockImplementation(
-        async (systemPrompt: string, textPayload: string, imageUrls: string[]) =>
+        async (_systemPrompt: string, _textPayload: string, _imageUrls: string[]) =>
           ok(sampleAiResult),
       );
       // Node F: write outputs
-      mockGraphWriter.writeNode.mockImplementation(async (node: any) => ok(true));
-      mockGraphWriter.writeIndex.mockImplementation(async (courseId: string, nodes: any[]) =>
+      mockGraphWriter.writeNode.mockImplementation(async (_node: any) => ok(true));
+      mockGraphWriter.writeIndex.mockImplementation(async (_courseId: string, _nodes: any[]) =>
         ok(true),
       );
-      mockGraphWriter.writeQuiz.mockImplementation(async (courseId: string, items: any[]) =>
+      mockGraphWriter.writeQuiz.mockImplementation(async (_courseId: string, _items: any[]) =>
         ok(true),
       );
 
@@ -194,7 +194,7 @@ describe("OrchestratorDagEngine", () => {
 
     it("returns error when Node A (Load Data) fails with NOT_FOUND", async () => {
       // Node A: download fails with not found
-      mockStorage.downloadFile.mockImplementation(async (uri: string) => {
+      mockStorage.downloadFile.mockImplementation(async (_uri: string) => {
         return err(DomainError.notFound("RawAsset", sessionId));
       });
 
@@ -222,12 +222,12 @@ describe("OrchestratorDagEngine", () => {
     it("returns error when Node B (Sign URLs) fails with PRESIGNED_URL_FAILED", async () => {
       // Node A: download succeeds - return a stream containing the JSON
       const rawAssetJson = JSON.stringify(sampleRawAsset);
-      mockStorage.downloadFile.mockImplementation(async (uri: string) =>
+      mockStorage.downloadFile.mockImplementation(async (_uri: string) =>
         ok(Readable.from(rawAssetJson)),
       );
       // Node B: generate presigned URL fails
       mockStorage.generatePresignedUrl.mockImplementation(
-        async (uri: string, expirySeconds: number) => {
+        async (_uri: string, _expirySeconds: number) => {
           return err(DomainError.presignedUrlFailed(new Error("B2 error")));
         },
       );
@@ -255,19 +255,19 @@ describe("OrchestratorDagEngine", () => {
     it("returns error when Node D (AI Execution) fails with AI_INFERENCE_FAILED", async () => {
       // Node A: download succeeds - return a stream containing the JSON
       const rawAssetJson = JSON.stringify(sampleRawAsset);
-      mockStorage.downloadFile.mockImplementation(async (uri: string) =>
+      mockStorage.downloadFile.mockImplementation(async (_uri: string) =>
         ok(Readable.from(rawAssetJson)),
       );
       // Node B: presigned URLs (2 calls for 2 assets)
       mockStorage.generatePresignedUrl.mockImplementationOnce(
-        async (uri: string, expirySeconds: number) => ok("https://presigned/slide1.png"),
+        async (_uri: string, _expirySeconds: number) => ok("https://presigned/slide1.png"),
       );
       mockStorage.generatePresignedUrl.mockImplementationOnce(
-        async (uri: string, expirySeconds: number) => ok("https://presigned/slide2.png"),
+        async (_uri: string, _expirySeconds: number) => ok("https://presigned/slide2.png"),
       );
       // Node D: AI inference fails
       mockAiGateway.multimodalInfer.mockImplementation(
-        async (systemPrompt: string, textPayload: string, imageUrls: string[]) => {
+        async (_systemPrompt: string, _textPayload: string, _imageUrls: string[]) => {
           return err(DomainError.aiInferenceFailed(new Error("AI failed")));
         },
       );
@@ -295,19 +295,19 @@ describe("OrchestratorDagEngine", () => {
     it("returns error when Node E (Validation) fails with AI_VALIDATION_FAILED", async () => {
       // Node A: download succeeds - return a stream containing the JSON
       const rawAssetJson = JSON.stringify(sampleRawAsset);
-      mockStorage.downloadFile.mockImplementation(async (uri: string) =>
+      mockStorage.downloadFile.mockImplementation(async (_uri: string) =>
         ok(Readable.from(rawAssetJson)),
       );
       // Node B: presigned URLs (2 calls for 2 assets)
       mockStorage.generatePresignedUrl.mockImplementationOnce(
-        async (uri: string, expirySeconds: number) => ok("https://presigned/slide1.png"),
+        async (_uri: string, _expirySeconds: number) => ok("https://presigned/slide1.png"),
       );
       mockStorage.generatePresignedUrl.mockImplementationOnce(
-        async (uri: string, expirySeconds: number) => ok("https://presigned/slide2.png"),
+        async (_uri: string, _expirySeconds: number) => ok("https://presigned/slide2.png"),
       );
       // Node D: AI returns result (even invalid)
       mockAiGateway.multimodalInfer.mockImplementation(
-        async (systemPrompt: string, textPayload: string, imageUrls: string[]) =>
+        async (_systemPrompt: string, _textPayload: string, _imageUrls: string[]) =>
           ok({ conceptNodes: [], quizItems: [] }),
       );
       // Node E: validation fails due to schema mismatch
@@ -335,23 +335,23 @@ describe("OrchestratorDagEngine", () => {
     it("returns error when Node F (Persist) fails on write with MARKDOWN_WRITE_FAILED", async () => {
       // Node A: download succeeds - return a stream containing the JSON
       const rawAssetJson = JSON.stringify(sampleRawAsset);
-      mockStorage.downloadFile.mockImplementation(async (uri: string) =>
+      mockStorage.downloadFile.mockImplementation(async (_uri: string) =>
         ok(Readable.from(rawAssetJson)),
       );
       // Node B: presigned URLs (2 calls for 2 assets)
       mockStorage.generatePresignedUrl.mockImplementationOnce(
-        async (uri: string, expirySeconds: number) => ok("https://presigned/slide1.png"),
+        async (_uri: string, _expirySeconds: number) => ok("https://presigned/slide1.png"),
       );
       mockStorage.generatePresignedUrl.mockImplementationOnce(
-        async (uri: string, expirySeconds: number) => ok("https://presigned/slide2.png"),
+        async (_uri: string, _expirySeconds: number) => ok("https://presigned/slide2.png"),
       );
       // Node D: AI execution
       mockAiGateway.multimodalInfer.mockImplementation(
-        async (systemPrompt: string, textPayload: string, imageUrls: string[]) =>
+        async (_systemPrompt: string, _textPayload: string, _imageUrls: string[]) =>
           ok({ conceptNodes: [], quizItems: [] }),
       );
       // Node F: write fails
-      mockGraphWriter.writeNode.mockImplementation(async (node: any) => {
+      mockGraphWriter.writeNode.mockImplementation(async (_node: any) => {
         return err(DomainError.markdownWriteFailed(new Error("Disk full")));
       });
 
@@ -378,28 +378,28 @@ describe("OrchestratorDagEngine", () => {
     it("executes nodes in correct topological order (A -> B -> C -> D -> E -> F)", async () => {
       // Node A: download succeeds - return a stream containing the JSON
       const rawAssetJson = JSON.stringify(sampleRawAsset);
-      mockStorage.downloadFile.mockImplementation(async (uri: string) =>
+      mockStorage.downloadFile.mockImplementation(async (_uri: string) =>
         ok(Readable.from(rawAssetJson)),
       );
       // Node B: presigned URLs (2 calls)
       mockStorage.generatePresignedUrl.mockImplementationOnce(
-        async (uri: string, expirySeconds: number) => ok("https://presigned/slide1.png"),
+        async (_uri: string, _expirySeconds: number) => ok("https://presigned/slide1.png"),
       );
       mockStorage.generatePresignedUrl.mockImplementationOnce(
-        async (uri: string, expirySeconds: number) => ok("https://presigned/slide2.png"),
+        async (_uri: string, _expirySeconds: number) => ok("https://presigned/slide2.png"),
       );
       // Node D: AI execution
       mockAiGateway.multimodalInfer.mockImplementation(
-        async (systemPrompt: string, textPayload: string, imageUrls: string[]) =>
+        async (_systemPrompt: string, _textPayload: string, _imageUrls: string[]) =>
           ok({ conceptNodes: [], quizItems: [] }),
       );
       // Node E: validation (passes)
       // Node F: write succeeds
-      mockGraphWriter.writeNode.mockImplementation(async (node: any) => ok(true));
-      mockGraphWriter.writeIndex.mockImplementation(async (courseId: string, nodes: any[]) =>
+      mockGraphWriter.writeNode.mockImplementation(async (_node: any) => ok(true));
+      mockGraphWriter.writeIndex.mockImplementation(async (_courseId: string, _nodes: any[]) =>
         ok(true),
       );
-      mockGraphWriter.writeQuiz.mockImplementation(async (courseId: string, items: any[]) =>
+      mockGraphWriter.writeQuiz.mockImplementation(async (_courseId: string, _items: any[]) =>
         ok(true),
       );
 
@@ -435,24 +435,24 @@ describe("OrchestratorDagEngine", () => {
     it("executes pipeline with utility function", async () => {
       // Node A: download succeeds - return a stream containing the JSON
       const rawAssetJson = JSON.stringify(sampleRawAsset);
-      mockStorage.downloadFile.mockImplementation(async (uri: string) =>
+      mockStorage.downloadFile.mockImplementation(async (_uri: string) =>
         ok(Readable.from(rawAssetJson)),
       );
       mockStorage.generatePresignedUrl.mockImplementationOnce(
-        async (uri: string, expirySeconds: number) => ok("https://presigned/slide1.png"),
+        async (_uri: string, _expirySeconds: number) => ok("https://presigned/slide1.png"),
       );
       mockStorage.generatePresignedUrl.mockImplementationOnce(
-        async (uri: string, expirySeconds: number) => ok("https://presigned/slide2.png"),
+        async (_uri: string, _expirySeconds: number) => ok("https://presigned/slide2.png"),
       );
       mockAiGateway.multimodalInfer.mockImplementation(
-        async (systemPrompt: string, textPayload: string, imageUrls: string[]) =>
+        async (_systemPrompt: string, _textPayload: string, _imageUrls: string[]) =>
           ok(sampleAiResult),
       );
-      mockGraphWriter.writeNode.mockImplementation(async (node: any) => ok(true));
-      mockGraphWriter.writeIndex.mockImplementation(async (courseId: string, nodes: any[]) =>
+      mockGraphWriter.writeNode.mockImplementation(async (_node: any) => ok(true));
+      mockGraphWriter.writeIndex.mockImplementation(async (_courseId: string, _nodes: any[]) =>
         ok(true),
       );
-      mockGraphWriter.writeQuiz.mockImplementation(async (courseId: string, items: any[]) =>
+      mockGraphWriter.writeQuiz.mockImplementation(async (_courseId: string, _items: any[]) =>
         ok(true),
       );
 

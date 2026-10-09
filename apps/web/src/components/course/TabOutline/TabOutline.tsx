@@ -67,8 +67,8 @@ export function TabOutline({
   const slideUri = currentNode?.sourceEvidence.slideUri || "";
 
   // Mock data for evidence counts
-  const transcriptCount = transcriptRef ? 1 : 0;
-  const slideCount = slideUri ? 1 : 0;
+  const _transcriptCount = transcriptRef ? 1 : 0;
+  const _slideCount = slideUri ? 1 : 0;
 
   // Helper to check if a node is expanded
   const isExpanded = (nodeId: string) => expandedNodeIds.includes(nodeId);
@@ -99,13 +99,11 @@ export function TabOutline({
             )}
             {/* Chapter/Concept number and title */}
             {!isChapter && (
-              <>
-                <span className="font-label-code-sm text-label-code-sm text-white/80">
-                  {/* We don't have a numbering scheme for concepts; we can use index? */}
-                  {/* For simplicity, we'll just show a dot or nothing */}
-                  {/* We'll skip the number for concepts */}
-                </span>
-              </>
+              <span className="font-label-code-sm text-label-code-sm text-white/80">
+                {/* We don't have a numbering scheme for concepts; we can use index? */}
+                {/* For simplicity, we'll just show a dot or nothing */}
+                {/* We'll skip the number for concepts */}
+              </span>
             )}
             {isChapter && (
               <span className="font-label-code-sm text-label-code-sm font-medium text-[#94a3b8]">
@@ -163,7 +161,7 @@ export function TabOutline({
                 {/* Concept item */}
                 <div className="flex items-center justify-between py-1 px-3 rounded hover:bg-[#1c2438]/60 text-[#94a3b8] hover:text-[#f8fafc] cursor-pointer">
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#38bdf8] animate-pulse"></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#38bdf8] animate-pulse" />
                     <span className="font-label-code-sm text-label-code-sm text-white/80">
                       {/* We don't have a numbering for concepts; we can use index? */}
                       {/* We'll just show a placeholder like "•" */}
@@ -236,7 +234,7 @@ export function TabOutline({
               id="outline-search"
               placeholder="檢索章節或概念..."
               type="text"
-              onChange={(e) => {
+              onChange={(_e) => {
                 // Implement search filtering
               }}
             />
@@ -257,7 +255,7 @@ export function TabOutline({
         <div className="p-3 bg-[#0d121c] border-t border-[#1e293b] flex flex-col gap-1 text-body-sm font-body-sm text-[#94a3b8]">
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-1 text-[#34d399]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#34d399]"></span>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#34d399]" />
               大綱樹同步完畢
             </span>
             <span className="font-label-code-sm text-label-code-sm text-[#94a3b8]">8 章節</span>
@@ -275,7 +273,7 @@ export function TabOutline({
         id="resizer-left"
         role="separator"
         aria-label="左右面板分隔條"
-      ></div>
+      />
 
       {/* ========================================================================= */}
       {/* 2. CENTER COLUMN: OutlineEditor (TipTap 筆記編輯器 flex-1)              */}
@@ -330,11 +328,7 @@ export function TabOutline({
                   <span>聚焦</span>
                 </button>
               </div>
-              <div
-                className="h-4 w-0.5 bg-[#1e293b]"
-                role="separator"
-                aria-label="垂直分隔條"
-              ></div>
+              <div className="h-4 w-0.5 bg-[#1e293b]" role="separator" aria-label="垂直分隔條" />
               {/* Secondary Actions */}
               <button
                 className="p-1.5 rounded-lg text-[#94a3b8] hover:text-[#f8fafc] hover:bg-surface-container transition-colors"
@@ -381,7 +375,7 @@ export function TabOutline({
               className="h-3 w-0.5 bg-outline-variant/30 mx-1"
               role="separator"
               aria-label="垂直分隔條"
-            ></div>
+            />
             <button
               className="px-2 py-0.5 rounded hover:bg-surface-container-high text-[#f8fafc] font-semibold text-body-sm font-body-sm"
               type="button"
@@ -453,7 +447,7 @@ export function TabOutline({
               <div
                 className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#6366f1]"
                 aria-hidden="true"
-              ></div>
+              />
               <div className="flex items-start gap-3">
                 <div
                   className="p-2 rounded-lg bg-[#1e2238] border border-[#3b4277] text-primary shrink-0"
@@ -496,7 +490,7 @@ export function TabOutline({
                     className="w-2 h-5 rounded-full bg-secondary"
                     role="img"
                     aria-label="五段階段圖示"
-                  ></span>
+                  />
                   經典五大階段 (Five-stage MIPS Pipeline)
                 </h2>
                 <button

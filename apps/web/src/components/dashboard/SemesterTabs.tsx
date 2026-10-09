@@ -63,7 +63,7 @@ export function SemesterTabs({ className = "", onChange }: SemesterTabsProps) {
             aria-current={isActive ? "page" : undefined}
             aria-pressed={isActive}
           >
-            {isActive && <span className="w-2 h-2 rounded-full bg-[#38BDF8] animate-ping"></span>}
+            {isActive && <span className="w-2 h-2 rounded-full bg-[#38BDF8] animate-ping" />}
             <span>{isActive && semesterData?.key === "104-1" ? "大二上 (現正進行)" : label}</span>
             {isActive && semesterData && (
               <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-white font-label-code-sm text-label-code-sm font-bold">

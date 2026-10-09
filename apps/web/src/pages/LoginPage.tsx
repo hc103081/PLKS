@@ -34,7 +34,7 @@ export function LoginPage() {
     }
   };
 
-  const handleGoogleLogin = async () => {
+  const _handleGoogleLogin = async () => {
     setLoading(true);
     setError(null);
     try {
@@ -56,9 +56,9 @@ export function LoginPage() {
     <div className="min-h-screen bg-background font-body-md text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container">
       {/* Cybernetic Academic Ambient Background Elements */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden -z-10 flex items-center justify-center">
-        <div className="absolute w-[800px] h-[800px] rounded-full bg-gradient-to-tr from-primary-container/10 via-tertiary-container/5 to-transparent blur-3xl opacity-40"></div>
-        <div className="absolute -top-48 -right-32 w-96 h-96 rounded-full bg-secondary-container/10 blur-3xl opacity-30"></div>
-        <div className="absolute -bottom-48 -left-32 w-96 h-96 rounded-full bg-primary/10 blur-3xl opacity-35"></div>
+        <div className="absolute w-[800px] h-[800px] rounded-full bg-gradient-to-tr from-primary-container/10 via-tertiary-container/5 to-transparent blur-3xl opacity-40" />
+        <div className="absolute -top-48 -right-32 w-96 h-96 rounded-full bg-secondary-container/10 blur-3xl opacity-30" />
+        <div className="absolute -bottom-48 -left-32 w-96 h-96 rounded-full bg-primary/10 blur-3xl opacity-35" />
         {/* Architectural Monospaced Blueprint Watermark Lines */}
         <svg
           className="w-full h-full opacity-15 text-outline-variant"
@@ -66,7 +66,7 @@ export function LoginPage() {
         >
           <defs>
             <pattern height="48" id="plks-cockpit-grid" patternUnits="userSpaceOnUse" width="48">
-              <circle cx="2" cy="2" fill="currentColor" opacity="0.3" r="1"></circle>
+              <circle cx="2" cy="2" fill="currentColor" opacity="0.3" r="1" />
               <path
                 d="M 48 0 L 0 0 0 48"
                 fill="none"
@@ -74,22 +74,22 @@ export function LoginPage() {
                 stroke="currentColor"
                 stroke-dasharray="1 7"
                 stroke-width="0.5"
-              ></path>
+              />
             </pattern>
           </defs>
-          <rect fill="url(#plks-cockpit-grid)" height="100%" width="100%"></rect>
+          <rect fill="url(#plks-cockpit-grid)" height="100%" width="100%" />
           {/* Subtle Knowledge Constellation Vector lines */}
           <g fill="none" opacity="0.35" stroke="currentColor" stroke-width="0.75">
-            <path d="M 120 280 L 260 210 L 390 310 L 520 180"></path>
-            <circle className="animate-pulse" cx="120" cy="280" fill="#8083ff" r="3"></circle>
-            <circle cx="260" cy="210" fill="#7bd0ff" r="2.5"></circle>
-            <circle cx="390" cy="310" fill="#ddb7ff" r="3"></circle>
-            <circle cx="520" cy="180" fill="#8083ff" r="3.5"></circle>
-            <path d="M 880 720 L 980 610 L 1140 680 L 1280 540"></path>
-            <circle cx="880" cy="720" fill="#7bd0ff" r="2.5"></circle>
-            <circle cx="980" cy="610" fill="#ddb7ff" r="3.5"></circle>
-            <circle cx="1140" cy="680" fill="#8083ff" r="2.5"></circle>
-            <circle cx="1280" cy="540" fill="#7bd0ff" r="3"></circle>
+            <path d="M 120 280 L 260 210 L 390 310 L 520 180" />
+            <circle className="animate-pulse" cx="120" cy="280" fill="#8083ff" r="3" />
+            <circle cx="260" cy="210" fill="#7bd0ff" r="2.5" />
+            <circle cx="390" cy="310" fill="#ddb7ff" r="3" />
+            <circle cx="520" cy="180" fill="#8083ff" r="3.5" />
+            <path d="M 880 720 L 980 610 L 1140 680 L 1280 540" />
+            <circle cx="880" cy="720" fill="#7bd0ff" r="2.5" />
+            <circle cx="980" cy="610" fill="#ddb7ff" r="3.5" />
+            <circle cx="1140" cy="680" fill="#8083ff" r="2.5" />
+            <circle cx="1280" cy="540" fill="#7bd0ff" r="3" />
           </g>
         </svg>
       </div>
@@ -99,8 +99,8 @@ export function LoginPage() {
         className="w-full max-w-xl mb-6 flex items-center justify-between px-3 py-1.5 rounded-lg bg-surface-container-lowest/80 backdrop-blur-md shadow-sm"
       >
         <div className="flex items-center space-x-2">
-          <span className="inline-block w-2 h-2 rounded-full bg-secondary-container shadow-sm animate-ping"></span>
-          <span className="inline-block w-2 h-2 rounded-full bg-secondary-container -ml-3"></span>
+          <span className="inline-block w-2 h-2 rounded-full bg-secondary-container shadow-sm animate-ping" />
+          <span className="inline-block w-2 h-2 rounded-full bg-secondary-container -ml-3" />
           <span className="font-label-code-sm text-label-code-sm text-on-surface-variant uppercase tracking-wider">
             GATEWAY NODE: TW-NORTH-TANET#4
           </span>
@@ -114,13 +114,13 @@ export function LoginPage() {
       {/* Central Authentication Card (Level 2 Elevation) */}
       <main className="w-full max-w-xl bg-surface-container-low rounded-xl shadow-2xl p-6 sm:p-10 relative overflow-hidden backdrop-blur-xl">
         {/* Subtle Top Edge Ambient Accent Glow */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-secondary-container via-primary-container to-tertiary-container"></div>
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-secondary-container via-primary-container to-tertiary-container" />
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center mb-8">
           <div className="relative mb-3 flex items-center justify-center">
             {/* Glowing Knowledge Emblem */}
             <div className="w-14 h-14 rounded-xl bg-surface-container-high flex items-center justify-center shadow-lg relative group">
-              <div className="absolute inset-0 rounded-xl bg-primary-container/20 blur-md group-hover:blur-lg transition-all duration-300"></div>
+              <div className="absolute inset-0 rounded-xl bg-primary-container/20 blur-md group-hover:blur-lg transition-all duration-300" />
               <span
                 className="material-symbols-outlined text-primary text-3xl relative z-10"
                 style={{ fontVariationSettings: "'FILL' 1" }}
@@ -130,7 +130,7 @@ export function LoginPage() {
             </div>
           </div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-highest font-label-code-sm text-label-code-sm text-primary mb-2 shadow-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
             v2.5 • 學術研究與教材 AI 萃取工作臺
           </div>
           <h1 className="font-headline-md text-headline-md font-bold tracking-tight text-on-surface">
@@ -152,19 +152,19 @@ export function LoginPage() {
                   <path
                     d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
                     fill="#4285F4"
-                  ></path>
+                  />
                   <path
                     d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.15C3.25 21.36 7.33 24 12 24z"
                     fill="#34A853"
-                  ></path>
+                  />
                   <path
                     d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.26C.46 8.16 0 9.94 0 12s.46 3.84 1.26 5.42l4.02-3.15z"
                     fill="#FBBC05"
-                  ></path>
+                  />
                   <path
                     d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.25 2.64 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
                     fill="#EA4335"
-                  ></path>
+                  />
                 </svg>
               </div>
               <div>
@@ -187,7 +187,7 @@ export function LoginPage() {
         {/* Visual Semantic Divider */}
         <div className="relative my-6 text-center">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full bg-surface-variant h-px"></div>
+            <div className="w-full bg-surface-variant h-px" />
           </div>
           <div className="relative inline-block px-3 bg-surface-container-low font-label-caps text-label-caps uppercase text-on-surface-variant tracking-wider">
             或使用研究員學術信箱登入
@@ -334,7 +334,7 @@ export function LoginPage() {
         {/* Global Footer Links & System Integrity Diagnostics */}
         <footer className="w-full max-w-xl mt-6 flex flex-col sm:flex-row items-center justify-between text-on-surface-variant font-body-sm text-body-sm px-2 gap-3">
           <div className="flex items-center space-x-1.5">
-            <span className="inline-block w-2 h-2 rounded-full bg-secondary-container"></span>
+            <span className="inline-block w-2 h-2 rounded-full bg-secondary-container" />
             <span className="font-label-code-sm text-label-code-sm">
               平臺運作正常 • PLKS v2.5.4-prod
             </span>

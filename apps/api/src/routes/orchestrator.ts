@@ -85,7 +85,7 @@ function createGetPipelineSummaryHandler(structuredStore: IStructuredStore): Rou
         healthy: true,
         healthPercentage: 100,
       });
-    } catch (err) {
+    } catch (_err) {
       return reply.status(500).send({ error: "Internal server error" });
     }
   };

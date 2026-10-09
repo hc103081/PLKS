@@ -56,7 +56,7 @@ export const Select: FC<SelectProps> = ({
   }[variant];
 
   // 下拉箭頭圖示
-  const ArrowIcon = () => (
+  const _ArrowIcon = () => (
     <span className="material-symbols-outlined text-on-surface-variant/70">expand_more</span>
   );
 

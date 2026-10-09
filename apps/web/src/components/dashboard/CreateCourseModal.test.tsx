@@ -26,7 +26,7 @@ describe("CreateCourseModal", () => {
     render(<CreateCourseModal isOpen={true} onClose={() => {}} onSubmit={async () => {}} />);
 
     // Try submit without filling any fields
-    const submitBtn = screen.getByRole("button", { name: /建立課程並啟動管線/ });
+    const _submitBtn = screen.getByRole("button", { name: /建立課程並啟動管線/ });
 
     // Since onSubmit is a no-op, we just verify the form can be rendered
     // Errors should be visible when submitting empty form

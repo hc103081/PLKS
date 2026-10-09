@@ -1,0 +1,1 @@
+SELECT id, user_id, code, name FROM public.courses WHERE code = 'TEST102';

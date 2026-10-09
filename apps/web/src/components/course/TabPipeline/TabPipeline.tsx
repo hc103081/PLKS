@@ -75,7 +75,7 @@ export function TabPipeline({
         <PipelineConfigDrawer
           config={pipelineStatus.config}
           onClose={() => onConfigDrawerToggle(false)}
-          onSave={(newConfig) => {
+          onSave={(_newConfig) => {
             // Save config and retry
           }}
         />

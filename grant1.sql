@@ -1,0 +1,1 @@
+GRANT SELECT, INSERT ON public.courses TO service_role;

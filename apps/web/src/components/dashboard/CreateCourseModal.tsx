@@ -19,14 +19,14 @@ export interface CreateCourseFormData {
   instructor: string;
 }
 
-const CREDIT_OPTIONS = [
+const _CREDIT_OPTIONS = [
   { value: 1, label: "1 學分" },
   { value: 2, label: "2 學分" },
   { value: 3, label: "3 學分" },
   { value: 4, label: "4 學分" },
 ];
 
-const TYPE_OPTIONS = [
+const _TYPE_OPTIONS = [
   { value: "required", label: "必修" },
   { value: "elective", label: "選修" },
   { value: "general", label: "通識" },
@@ -76,13 +76,14 @@ export function CreateCourseModal({
     value: string | number,
   ): string | undefined => {
     switch (name) {
-      case "code":
+      case "code": {
         if (!value || (value as string).trim().length === 0) return "課程代號為必填";
         const codeStr = (value as string).trim();
         // Allow numeric codes (e.g., 2692) or alphanumeric codes (e.g., CS101, MA101, PHY101)
         if (!/^(\d{4,6}|[A-Z]{2,4}\d{3,4})$/i.test(codeStr))
           return "格式範例: 2692, CS101, MA101, PHY101";
         break;
+      }
       case "name":
         if (!value || (value as string).trim().length === 0) return "課程完整名稱為必填";
         if ((value as string).trim().length < 2) return "名稱至少 2 字元";
@@ -166,8 +167,8 @@ export function CreateCourseModal({
       {/* MODAL CONTAINER */}
       <div className="relative w-full max-w-[710px] my-auto bg-surface-container-high rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.85)] shadow-primary/10 overflow-hidden transition-all transform flex flex-col">
         {/* Ambient Glow Decorator behind modal card */}
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/15 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-secondary-container/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-secondary-container/10 rounded-full blur-3xl pointer-events-none" />
 
         {/* 1. MODAL HEADER */}
         <div className="relative flex items-start justify-between p-space-lg bg-surface-container-highest/60">
