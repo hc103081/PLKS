@@ -7,6 +7,7 @@ import type {
   QuizItemPayload,
   SidekickMessage,
 } from "../../../types/api";
+import type { CourseCardData } from "../../../types/course";
 import { LoadingSkeleton } from "../../shared";
 
 interface TabGameProps {
@@ -23,7 +24,7 @@ export function TabGame({
   course,
   gameState,
   gameSession,
-  sessionId,
+  _sessionId,
   isLoading,
   sidekickOpen,
   onSidekickToggle,

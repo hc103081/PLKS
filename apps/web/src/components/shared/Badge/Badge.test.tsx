@@ -27,7 +27,7 @@ describe("Badge", () => {
   });
 
   it("應該渲染正確的變體類別", () => {
-    const variants = ["default", "primary", "secondary", "success", "warning", "error"];
+    const variants = ["default", "primary", "secondary", "success", "warning", "error"] as const;
     variants.forEach((variant) => {
       const children = variant;
       const { container } = render(<Badge variant={variant}>{children}</Badge>);

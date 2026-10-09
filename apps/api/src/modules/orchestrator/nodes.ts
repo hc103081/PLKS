@@ -3,12 +3,12 @@ import { Readable } from "node:stream";
 import type { IStorageAdapter } from "@plks/shared/contracts";
 import type { IKnowledgeGraphWriter } from "@plks/shared/contracts";
 import type { IAIReasoningGateway } from "@plks/shared/contracts";
+import { DomainError } from "@plks/shared/errors";
 import type { RawAssetPayload } from "@plks/shared/schemas";
 import type { ConceptNodePayload } from "@plks/shared/schemas";
 import { type AiExtractionResult, AiExtractionResultSchema } from "@plks/shared/schemas";
 import { type Result, err, ok } from "neverthrow";
 import { RawAsset } from "../../core/entities/raw-asset.js";
-import { DomainError } from "../../core/errors/domain-errors.js";
 
 export interface PipelineContext extends Record<string, unknown> {
   sessionId: string;
@@ -58,6 +58,9 @@ export function createPipelineNodes(
 
       return ok({ ...ctx, rawAsset: rawAsset.toPayload() });
     } catch (cause) {
+      if (cause instanceof DomainError) {
+        return err(cause);
+      }
       return err(DomainError.ingestionFailed(cause));
     }
   };
@@ -122,9 +125,9 @@ export function createPipelineNodes(
             },
             "required": ["transcriptRef", "slideUri"]
           }
-        },
-        "required": ["conceptId", "courseId", "term", "explanation", "relatedTerms", "sourceEvidence"]
-      }
+        }
+      },
+      "required": ["conceptId", "courseId", "term", "explanation", "relatedTerms", "sourceEvidence"]
     },
     "quizItems": {
       "type": "array",
@@ -138,8 +141,7 @@ export function createPipelineNodes(
           "options": { "type": "array", "items": { "type": "string" } },
           "correctAnswer": { "type": "string", "minLength": 1 },
           "contextReference": { "type": "string", "format": "uuid" }
-        },
-        "required": ["quizId", "courseId", "type", "question", "correctAnswer", "contextReference"]
+        }
       }
     }
   },
@@ -184,6 +186,9 @@ export function createPipelineNodes(
         imageUrls,
       });
     } catch (cause) {
+      if (cause instanceof DomainError) {
+        return err(cause);
+      }
       return err(DomainError.ingestionFailed(cause));
     }
   };
@@ -208,6 +213,9 @@ export function createPipelineNodes(
 
       return ok({ ...ctx, aiResult: aiResult.value as AiExtractionResult });
     } catch (cause) {
+      if (cause instanceof DomainError) {
+        return err(cause);
+      }
       return err(DomainError.aiInferenceFailed(cause));
     }
   };
@@ -227,6 +235,9 @@ export function createPipelineNodes(
 
       return ok({ ...ctx, validatedResult: parseResult.data });
     } catch (cause) {
+      if (cause instanceof DomainError) {
+        return err(cause);
+      }
       return err(DomainError.aiValidationFailed(cause));
     }
   };
@@ -265,6 +276,9 @@ export function createPipelineNodes(
 
       return ok(ctx);
     } catch (cause) {
+      if (cause instanceof DomainError) {
+        return err(cause);
+      }
       return err(DomainError.markdownWriteFailed(cause));
     }
   };

@@ -1,7 +1,7 @@
+import { DomainError } from "@plks/shared/errors";
 // apps/api/src/core/dag/engine.ts
 import type { Result } from "neverthrow";
 import { err, ok } from "neverthrow";
-import { DomainError } from "../errors/domain-errors.js";
 
 export type DagContext = Record<string, unknown>;
 
@@ -169,7 +169,7 @@ export class DagEngine<T extends DagContext> {
     for (const level of levels) {
       // Execute all nodes in this level nodes in parallel
       const results = await Promise.all(
-        level.map(async (nodeName) => {
+        level.map((nodeName) => {
           const node = this.nodes.get(nodeName);
           if (!node) {
             throw new Error(`Node not found: ${nodeName}`);

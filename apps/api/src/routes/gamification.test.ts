@@ -1,6 +1,6 @@
 // apps/api/src/routes/gamification.test.ts
-import { type Result, ok, err } from "neverthrow";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { type Result, err, ok } from "neverthrow";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock GamificationService following PLKS patterns
 class MockGamificationService implements GamificationServiceInterface {
@@ -34,7 +34,7 @@ describe("Gamification Routes", () => {
             correctAnswer: "C. 數據訓練",
             contextReference: "concept-1",
           },
-        })
+        }),
       );
 
       const { startGameHandler } = await import("./gamification.js");
@@ -52,7 +52,7 @@ describe("Gamification Routes", () => {
 
     it("returns 404 when no quiz items found", async () => {
       mockGamification.startGame.mockImplementation(async () =>
-        err({ code: "NOT_FOUND", message: "QuizItems not found", cause: new Error("not found") })
+        err({ code: "NOT_FOUND", message: "QuizItems not found", cause: new Error("not found") }),
       );
 
       const { startGameHandler } = await import("./gamification.js");
@@ -86,11 +86,13 @@ describe("Gamification Routes", () => {
           },
           isCorrect: true,
           xpEarned: 100,
-        })
+        }),
       );
 
       const { submitAnswerHandler } = await import("./gamification.js");
-      const handler = submitAnswerHandler(mockGamification as unknown as GamificationServiceInterface);
+      const handler = submitAnswerHandler(
+        mockGamification as unknown as GamificationServiceInterface,
+      );
 
       const request = { body: { sessionId, userAnswer: "C. 數據訓練", timeSpentMs: 30000 } };
       const reply = { status: vi.fn().mockReturnThis(), send: vi.fn() };
@@ -108,11 +110,13 @@ describe("Gamification Routes", () => {
 
     it("returns 404 when session not found", async () => {
       mockGamification.submitAnswer.mockImplementation(async () =>
-        err({ code: "NOT_FOUND", message: "GameSession not found", cause: new Error("not found") })
+        err({ code: "NOT_FOUND", message: "GameSession not found", cause: new Error("not found") }),
       );
 
       const { submitAnswerHandler } = await import("./gamification.js");
-      const handler = submitAnswerHandler(mockGamification as unknown as GamificationServiceInterface);
+      const handler = submitAnswerHandler(
+        mockGamification as unknown as GamificationServiceInterface,
+      );
 
       const request = { body: { sessionId, userAnswer: "A", timeSpentMs: 10000 } };
       const reply = { status: vi.fn().mockReturnThis(), send: vi.fn() };
@@ -133,11 +137,13 @@ describe("Gamification Routes", () => {
           actionableHint: "嘗試回顧課本第五章關於監督學習的定義",
           encouragement: "很好的嘗試！繼續加油",
           relatedSlideUris: ["https://b2.example.com/slides/chapter5.png"],
-        })
+        }),
       );
 
       const { requestHelpHandler } = await import("./gamification.js");
-      const handler = requestHelpHandler(mockGamification as unknown as GamificationServiceInterface);
+      const handler = requestHelpHandler(
+        mockGamification as unknown as GamificationServiceInterface,
+      );
 
       const request = { params: { sessionId } };
       const reply = { status: vi.fn().mockReturnThis(), send: vi.fn() };
@@ -157,11 +163,13 @@ describe("Gamification Routes", () => {
 
     it("returns 404 when session not found", async () => {
       mockGamification.requestHelp.mockImplementation(async () =>
-        err({ code: "NOT_FOUND", message: "GameSession not found", cause: new Error("not found") })
+        err({ code: "NOT_FOUND", message: "GameSession not found", cause: new Error("not found") }),
       );
 
       const { requestHelpHandler } = await import("./gamification.js");
-      const handler = requestHelpHandler(mockGamification as unknown as GamificationServiceInterface);
+      const handler = requestHelpHandler(
+        mockGamification as unknown as GamificationServiceInterface,
+      );
 
       const request = { params: { sessionId } };
       const reply = { status: vi.fn().mockReturnThis(), send: vi.fn() };
@@ -187,11 +195,13 @@ describe("Gamification Routes", () => {
           answers: [],
           createdAt: new Date(),
           updatedAt: new Date(),
-        })
+        }),
       );
 
       const { getGameStateHandler } = await import("./gamification.js");
-      const handler = getGameStateHandler(mockGamification as unknown as GamificationServiceInterface);
+      const handler = getGameStateHandler(
+        mockGamification as unknown as GamificationServiceInterface,
+      );
 
       const request = { params: { sessionId } };
       const reply = { status: vi.fn().mockReturnThis(), send: vi.fn() };
@@ -216,11 +226,13 @@ describe("Gamification Routes", () => {
 
     it("returns 404 when session not found", async () => {
       mockGamification.getGameState.mockImplementation(async () =>
-        err({ code: "NOT_FOUND", message: "GameSession not found", cause: new Error("not found") })
+        err({ code: "NOT_FOUND", message: "GameSession not found", cause: new Error("not found") }),
       );
 
       const { getGameStateHandler } = await import("./gamification.js");
-      const handler = getGameStateHandler(mockGamification as unknown as GamificationServiceInterface);
+      const handler = getGameStateHandler(
+        mockGamification as unknown as GamificationServiceInterface,
+      );
 
       const request = { params: { sessionId } };
       const reply = { status: vi.fn().mockReturnThis(), send: vi.fn() };

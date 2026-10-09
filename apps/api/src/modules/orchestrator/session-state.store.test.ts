@@ -1,10 +1,10 @@
 import { Readable } from "node:stream";
 import type { IStorageAdapter } from "@plks/shared/contracts";
+import { DomainError } from "@plks/shared/errors";
 import { type Result, err, ok } from "neverthrow";
 // apps/api/src/modules/orchestrator/session-state.store.test.ts
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Session } from "../../core/entities/session.js";
-import { DomainError } from "../../core/errors/domain-errors.js";
 import { SessionStateStore } from "./session-state.store.js";
 
 describe("SessionStateStore", () => {

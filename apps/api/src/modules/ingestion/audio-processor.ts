@@ -3,9 +3,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 // apps/api/src/modules/ingestion/audio-processor.ts
 import { Readable } from "node:stream";
+import { DomainError } from "@plks/shared/errors";
 import type { Result } from "neverthrow";
 import { err, ok } from "neverthrow";
-import { DomainError } from "../../core/errors/domain-errors.js";
 import type { AudioSegment, IngestionConfig, TranscriptSegment } from "./types.js";
 
 export class AudioProcessor {

@@ -12,12 +12,13 @@ import type {
 
 export const CreateCourseInputSchema = z.object({
   userId: z.string().uuid(),
-  semesterCode: z.string(),
-  code: z.string(),
+  semester: z.string().min(1),
+  code: z.string().min(1),
   name: z.string().min(1),
-  description: z.string().optional(),
-  coverImageUri: z.string().url().optional(),
-  b2ExportDir: z.string().url().optional(),
+  credits: z.number().int().positive(),
+  type: z.enum(["required", "elective", "general"]),
+  instructor: z.string().optional(),
+  location: z.string().optional(),
 });
 
 export type CreateCourseInput = z.infer<typeof CreateCourseInputSchema>;

@@ -29,7 +29,7 @@ describe("Chip", () => {
   });
 
   it("應該渲�正確的變體類別", () => {
-    const variants = ["default", "primary", "secondary", "success", "warning", "error"];
+    const variants = ["default", "primary", "secondary", "success", "warning", "error"] as const;
     for (const variant of variants) {
       const children = variant;
       render(<Chip variant={variant}>{children}</Chip>);

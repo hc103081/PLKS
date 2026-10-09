@@ -1,16 +1,15 @@
+import { injectable } from "tsyringe";
 // apps/api/src/modules/orchestrator/engine.ts
 import { DagEngine } from "../../core/dag/engine.js";
 import type { PipelineContext } from "./nodes.js";
-import { injectable } from "tsyringe";
 
 import type { IStorageAdapter } from "@plks/shared/contracts";
 import type { IKnowledgeGraphWriter } from "@plks/shared/contracts";
 import type { IAIReasoningGateway } from "@plks/shared/contracts";
 
+import type { DomainError } from "@plks/shared/errors";
 import { type Result, err, ok } from "neverthrow";
-
 import { createPipelineNodes } from "./nodes.js";
-import type { DomainError } from "../../core/errors/domain-errors.js";
 
 /**
  * Pipeline nodes created via dependency injection.
@@ -29,7 +28,7 @@ export interface OrchestratorDagEngineOptions {
 
 /**
  * Configured DAG Engine for the PLKS Orchestrator Phase 3.
- * 
+ *
  * Executes the 6-node pipeline (A-F):
  *   Node A: Load Data - Read RawAssetPayload from Supabase/B2
  *   Node B: B2 URL Signing - Generate 15-minute presigned URLs for visual assets
@@ -37,7 +36,7 @@ export interface OrchestratorDagEngineOptions {
  *   Node D: AI Execution - Parallel call to NVIDIA NIM multimodal inference
  *   Node E: Validation - Zod schema validation with retry on failure
  *   Node F: Persistence - Write to Supabase via IStructuredStore + markdown via IKnowledgeGraphWriter
- * 
+ *
  * All nodes follow the Result/Either pattern for error handling.
  * The engine provides topological ordering, parallel execution per level,
  * and exponential backoff retry support.
@@ -52,11 +51,7 @@ export class OrchestratorDagEngine {
     private readonly aiGateway: IAIReasoningGateway,
     options: OrchestratorDagEngineOptions = {},
   ) {
-    const pipelineNodes = createPipelineNodes(
-      storage,
-      graphWriter,
-      aiGateway,
-    );
+    const pipelineNodes = createPipelineNodes(storage, graphWriter, aiGateway);
 
     this.dagEngine = new DagEngine<PipelineContext>(
       [
@@ -76,7 +71,7 @@ export class OrchestratorDagEngine {
 
   /**
    * Execute the full orchestrator pipeline with the given initial context.
-   * 
+   *
    * @param initialContext - Minimum required: { sessionId, courseId }
    * @returns Result containing the final PipelineContext after all nodes execute, or DomainError
    */
@@ -86,18 +81,17 @@ export class OrchestratorDagEngine {
 
   /**
    * Get the topological order of nodes for debugging/inspection.
-   * 
+   *
    * @returns Array of node names in execution order
    */
   getNodeExecutionOrder(): string[] {
     // Use the internal topological sort from DagEngine
-    // @ts-expect-error - accessing internal state for inspection
-    return this.dagEngine["topologicalSort"]?.() ?? [];
+    return (this.dagEngine as any).topologicalSort?.() ?? [];
   }
 
   /**
    * Get the computed levels for parallel execution.
-   * 
+   *
    * @returns Array of level arrays, each containing node names that can run in parallel
    */
   getExecutionLevels(): string[][] {
@@ -137,7 +131,7 @@ export const defaultOrchestratorDagEngineOptions: OrchestratorDagEngineOptions =
 
 /**
  * Execute the orchestrator DAG engine with the given dependencies and context.
- * 
+ *
  * @param storage - IStorageAdapter implementation
  * @param graphWriter - IKnowledgeGraphWriter implementation
  * @param aiGateway - IAIReasoningGateway implementation
@@ -157,15 +151,15 @@ export async function executeOrchestratorDag(
 }
 
 /**
- * Check if a Result is Ok (type guard for neverthrow Result).
- * @deprecated Use result.isOk() directly instead
+ * Check if a Result is Ok (type guard for neverthrow Result v6).
+ * Uses the built-in isOk() method.
  */
-export const isOk = <T, E>(result: Result<T, E>): boolean => result.isOk();
+export const isOk = <T, E>(result: Result<T, E>): boolean => (result as any).isOk();
 
 /**
- * Check if a Result is Err (type guard for neverthrow Result).
- * @deprecated Use result.isErr() directly instead
+ * Check if a Result is Err (type guard for neverthrow Result v6).
+ * Uses the built-in isErr() method.
  */
-export const isErr = <T, E>(result: Result<T, E>): boolean => result.isErr();
+export const isErr = <T, E>(result: Result<T, E>): boolean => (result as any).isErr();
 
-export type { DomainError } from "../../core/errors/domain-errors.js";
+export type { DomainError } from "@plks/shared/errors";

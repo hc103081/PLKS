@@ -8,12 +8,13 @@ import { type Result, err, ok } from "neverthrow";
 import { z } from "zod";
 
 const CreateCourseSchema = z.object({
-  semesterCode: z.string().min(1),
+  semester: z.string().min(1),
   code: z.string().min(1),
   name: z.string().min(1),
-  description: z.string().nullable().optional(),
-  coverImageUri: z.string().url().or(z.literal("")).nullable().optional(),
-  b2ExportDir: z.string().url().or(z.literal("")).nullable().optional(),
+  credits: z.number().int().positive(),
+  type: z.enum(["required", "elective", "general"]),
+  instructor: z.string().optional(),
+  location: z.string().optional(),
 });
 
 const CourseParamsSchema = z.object({
@@ -25,7 +26,38 @@ function createGetCoursesHandler(structuredStore: IStructuredStore): RouteHandle
     try {
       const userId = process.env["PLKS_DEV_USER_ID"] ?? "00000000-0000-0000-0000-000000000000";
       const courses = await structuredStore.getCoursesByUser(userId);
-      return reply.send(courses);
+      // Transform database Course to CourseCardData format expected by frontend
+      const courseCardData = courses.map((course) => ({
+        id: course.id,
+        code: course.code,
+        name: course.name,
+        semester: course.semesters?.label ?? course.semester_code,
+        credits: 3, // Default, not stored in DB yet
+        required: true, // Default
+        instructor: undefined,
+        location: undefined,
+        status: "idle" as const, // Default
+        progress: 0, // Default
+        totalChapters: 0, // Default
+        completedChapters: 0, // Default
+        lastReviewedAt: undefined,
+        currentTopic: undefined,
+        conceptGraphCount: 0, // Default
+        audioCount: 0, // Default
+        quizCount: 0, // Default
+        latestSessionId: undefined,
+        pipelineStage: undefined,
+      }));
+      return reply.send({
+        courses: courseCardData,
+        pipelineSummary: {
+          inProgress: 0,
+          pending: 0,
+          needsAttention: 0,
+          healthy: true,
+          healthPercentage: 100,
+        },
+      });
     } catch (err) {
       if (err instanceof DomainError) {
         return reply.status(400).send({ error: err.message });
@@ -37,6 +69,23 @@ function createGetCoursesHandler(structuredStore: IStructuredStore): RouteHandle
 
 function createCreateCourseHandler(structuredStore: IStructuredStore): RouteHandlerMethod {
   return async (request, reply) => {
+    // 先定義 input 以便在 catch block 中使用
+    let input: {
+      semester: string;
+      code: string;
+      name: string;
+      credits: number;
+      type: "required" | "elective" | "general";
+      instructor?: string | undefined;
+      location?: string | undefined;
+    } = {
+      semester: "",
+      code: "",
+      name: "",
+      credits: 0,
+      type: "required",
+    };
+
     try {
       const parseResult = CreateCourseSchema.safeParse(request.body);
       if (!parseResult.success) {
@@ -46,17 +95,62 @@ function createCreateCourseHandler(structuredStore: IStructuredStore): RouteHand
         });
       }
 
-      const userId = process.env["PLKS_DEV_USER_ID"] ?? "00000000-0000-0000-0000-000000000000";
-      const input = {
-        ...parseResult.data,
-        userId,
+      // 只傳遞課程相關欄位，不包含 userId (由 adapter 從 auth context 取得)
+      input = {
+        semester: parseResult.data.semester,
+        code: parseResult.data.code,
+        name: parseResult.data.name,
+        credits: parseResult.data.credits,
+        type: parseResult.data.type,
+        instructor: parseResult.data.instructor,
+        location: parseResult.data.location,
       };
+      console.log("[courses.ts] createCourse input:", input);
 
-      const course = await structuredStore.createCourse(input);
+      const userId = process.env["PLKS_DEV_USER_ID"] ?? "00000000-0000-0000-0000-000000000000";
+      // 在 input 中加入 userId（ adapter 會使用 this.getUserId()，但這裡顯式傳遞以確保正確）
+      const course = await structuredStore.createCourse({
+        ...input,
+        userId,
+      });
+      console.log("[courses.ts] createCourse success:", course);
       return reply.status(201).send(course);
     } catch (err) {
+      console.error("[courses.ts] createCourse error:", err);
       if (err instanceof DomainError) {
-        return reply.status(400).send({ error: err.message });
+        // 提取 DomainError 的 cause 並嘗試解析 JSON
+        let details: unknown = err.cause;
+        if (err.cause instanceof Error) {
+          try {
+            details = JSON.parse(err.cause.message);
+          } catch {
+            details = { message: err.cause.message };
+          }
+        }
+        // 檢查是否為 duplicate key 錯誤 (PostgreSQL 23505 / PGRST205)
+        if (details && typeof details === "object" && "code" in details) {
+          const code = (details as Record<string, unknown>)["code"];
+          if (
+            code === "23505" ||
+            code === "PGRST205" ||
+            (typeof code === "string" && code.includes("duplicate"))
+          ) {
+            return reply.status(400).send({
+              error: "Duplicate course code",
+              details: {
+                message: `Course with code '${input?.code}' already exists for this user`,
+              },
+            });
+          }
+        }
+        return reply.status(400).send({ error: err.message, details });
+      }
+      // 檢查是否是 Supabase 獨約制錯誤
+      if (err instanceof Error && err.message?.includes("duplicate key")) {
+        return reply.status(400).send({
+          error: "Duplicate course code",
+          details: { message: err.message },
+        });
       }
       return reply.status(500).send({ error: "Internal server error" });
     }
@@ -98,8 +192,8 @@ function createUpdateCourseHandler(structuredStore: IStructuredStore): RouteHand
           name: z.string().min(1).optional(),
           code: z.string().min(1).optional(),
           description: z.string().nullable().optional(),
-          coverImageUri: z.string().url().or(z.literal("")).nullable().optional(),
-          b2ExportDir: z.string().url().or(z.literal("")).nullable().optional(),
+          coverImageUri: z.string().url().optional(),
+          b2ExportDir: z.string().url().optional(),
           status: z.enum(["active", "archived", "deleted"]).optional(),
         })
         .safeParse(request.body);
@@ -111,7 +205,12 @@ function createUpdateCourseHandler(structuredStore: IStructuredStore): RouteHand
         });
       }
 
-      const course = await structuredStore.updateCourse(parseResult.data.id, updateData.data);
+      // Filter out undefined values for exactOptionalPropertyTypes compatibility
+      const filteredData = Object.fromEntries(
+        Object.entries(updateData.data).filter(([, v]) => v !== undefined),
+      ) as Partial<Course>;
+
+      const course = await structuredStore.updateCourse(parseResult.data.id, filteredData);
       return reply.send(course);
     } catch (err) {
       if (err instanceof DomainError) {

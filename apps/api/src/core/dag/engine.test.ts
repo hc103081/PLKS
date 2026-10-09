@@ -1,8 +1,8 @@
+import { DomainError } from "@plks/shared/errors";
 import type { Result } from "neverthrow";
 import { err, ok } from "neverthrow";
 // apps/api/src/core/dag/engine.test.ts
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { DomainError } from "../errors/domain-errors.js";
 import { type DagContext, DagEngine, type DagNode } from "./engine.js";
 
 describe("DagEngine", () => {

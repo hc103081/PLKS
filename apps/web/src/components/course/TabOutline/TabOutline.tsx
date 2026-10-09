@@ -1,5 +1,23 @@
 import React, { useState, useRef } from "react";
 import type { ConceptNodeWithMeta, EvidenceData, OutlineTreeData } from "../../../types/course";
+
+// Recursively flatten a concept tree into a single-level array
+function flattenTree(nodes: ConceptNodeWithMeta[]): ConceptNodeWithMeta[] {
+  const result: ConceptNodeWithMeta[] = [];
+
+  function recurse(nodeList: ConceptNodeWithMeta[]) {
+    for (const node of nodeList) {
+      result.push(node);
+      if (node.children && node.children.length > 0) {
+        recurse(node.children);
+      }
+    }
+  }
+
+  recurse(nodes);
+  return result;
+}
+
 import { LoadingSkeleton } from "../../shared";
 
 // Updated TabOutline component matching the UI specification
@@ -52,6 +70,120 @@ export function TabOutline({
   const transcriptCount = transcriptRef ? 1 : 0;
   const slideCount = slideUri ? 1 : 0;
 
+  // Helper to check if a node is expanded
+  const isExpanded = (nodeId: string) => expandedNodeIds.includes(nodeId);
+
+  // Recursive function to render tree nodes
+  const renderTreeNode = (node: ConceptNodeWithMeta, level = 0) => {
+    const isEditing = editingNodeId === node.conceptId;
+    const isChapter = level === 0; // Assuming root nodes are chapters
+    const indentClass = `w-[${24 * level}px] inline-block`;
+    const iconClassName = `material-symbols-outlined text-[16px] text-[${isChapter ? (isExpanded(node.conceptId) ? "#94a3b8" : "#94a3b8") : "inherit"}] chevron-icon transition-transform ${isChapter && isExpanded(node.conceptId) ? "rotate-90" : ""}`;
+    const divClassName = "test";
+
+    return (
+      <>
+        {/* Node container */}
+        <div
+          className={divClassName}
+          onClick={isChapter ? () => onNodeExpandToggle(node.conceptId) : undefined} // Concept nodes are not expandable in this design
+        >
+          <div className="flex items-center gap-1.5 min-w-0">
+            {/* Indentation for non-chapter nodes */}
+            {!isChapter && <div className={indentClass} />}
+            {/* Expander icon for chapters */}
+            {isChapter && (
+              <span className={iconClassName}>
+                {isExpanded(node.conceptId) ? "expand_more" : "chevron_right"}
+              </span>
+            )}
+            {/* Chapter/Concept number and title */}
+            {!isChapter && (
+              <>
+                <span className="font-label-code-sm text-label-code-sm text-white/80">
+                  {/* We don't have a numbering scheme for concepts; we can use index? */}
+                  {/* For simplicity, we'll just show a dot or nothing */}
+                  {/* We'll skip the number for concepts */}
+                </span>
+              </>
+            )}
+            {isChapter && (
+              <span className="font-label-code-sm text-label-code-sm font-medium text-[#94a3b8]">
+                {/* We need to extract chapter number from term? For now, we'll just show a placeholder */}
+                {/* We'll use the node's conceptId to generate a number? */}
+                {/* We'll just show "第 X 章" based on index in rootNodeIds? */}
+                {/* Since we don't have index here, we'll skip and just show the term */}
+                {/* Actually, the term already includes the chapter number and title */}
+                {/* We'll just show the term */}
+                {node.term}
+              </span>
+            )}
+            {!isChapter && (
+              <span className="truncate font-semibold text-[#f8fafc]">{node.term}</span>
+            )}
+          </div>
+
+          {/* Status indicators */}
+          {isChapter && (
+            <>
+              {/* Percentage badge (placeholder) */}
+              <span className="text-label-code-sm font-label-code-sm px-1.5 py-0.2 rounded-full bg-surface-container-high text-on-surface-variant shrink-0">
+                0%
+              </span>
+              {/* Expander icon for chapters (already shown above? Actually we have two icons: one on left, one on right?) */}
+              {/* In the original design, there is only the chevron on the left, and the percentage on the right. */}
+              {/* We already placed the expander icon on the left inside the flex items-center. */}
+              {/* The original also had a second icon? Looking at the hardcoded version, there was only the chevron on the left and the percentage on the right. */}
+              {/* So we don't need an extra icon here. */}
+            </>
+          )}
+          {!isChapter && (
+            <>
+              {/* Check mark for concept nodes (if not editing) */}
+              {!isEditing && (
+                <span className="material-symbols-outlined text-[13px] text-[#34d399]">
+                  check_circle
+                </span>
+              )}
+              {/* Editing label */}
+              {isEditing && (
+                <span className="text-label-code-sm font-label-code-sm px-1.5 py-0.2 rounded bg-[#312e81] text-[#c0c1ff] font-medium border border-indigo-400/30">
+                  編輯中
+                </span>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Children if expanded and chapter */}
+        {isChapter && isExpanded(node.conceptId) && (
+          <div className="pl-6 pr-1 space-y-0.5">
+            {node.children?.map((child) => (
+              <React.Fragment key={child.conceptId}>
+                {/* Concept item */}
+                <div className="flex items-center justify-between py-1 px-3 rounded hover:bg-[#1c2438]/60 text-[#94a3b8] hover:text-[#f8fafc] cursor-pointer">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#38bdf8] animate-pulse"></span>
+                    <span className="font-label-code-sm text-label-code-sm text-white/80">
+                      {/* We don't have a numbering for concepts; we can use index? */}
+                      {/* We'll just show a placeholder like "•" */}
+                      {/* For now, we'll skip the number */}
+                    </span>
+                    <span className="truncate font-semibold text-[#f8fafc]">{child.term}</span>
+                  </div>
+                  {/* Check mark for concept */}
+                  <span className="material-symbols-outlined text-[13px] text-[#34d399]">
+                    check_circle
+                  </span>
+                </div>
+              </React.Fragment>
+            ))}
+          </div>
+        )}
+      </>
+    );
+  };
+
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-[#0b0f17]">
       {/* ========================================================================= */}
@@ -68,7 +200,7 @@ export function TabOutline({
               <span className="material-symbols-outlined text-[18px] text-primary">
                 account_tree
               </span>
-              <span className="text-title-md font-title-md text-[#f8fafc]">課程知識大綱</span>
+              <span className="title-md font-title-md text-[#f8fafc]">課程知識大綱</span>
             </div>
             <div className="flex items-center gap-1">
               <button
@@ -113,230 +245,27 @@ export function TabOutline({
 
         {/* Tree Nodes List */}
         <div className="flex-1 overflow-y-auto px-3 py-2 space-y-0.5 text-body-sm font-body-sm">
-          {/* Chapter 1 (Collapsed) */}
-          <div className="tree-group">
-            <button
-              className={`group flex items-center justify-between px-3 py-1.5 rounded-lg hover:bg-[#1c2438] cursor-pointer text-[#e2e8f0] transition-colors ${expandedNodeIds.includes("ch1") ? "bg-[#19223a] border border-[#2e3b60] text-[#f8fafc] font-semibold" : ""}`}
-              id="chapter-1-toggle"
-              title="切換第 1 章節"
-              type="button"
-              onClick={(e) => {
-                onNodeExpandToggle("ch1");
-              }}
-            >
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span
-                  className={`material-symbols-outlined text-[16px] text-[#94a3b8] chevron-icon transition-transform ${expandedNodeIds.includes("ch1") ? "rotate-90" : ""}`}
-                >
-                  chevron_right
-                </span>
-                <span className="font-label-code-sm text-label-code-sm font-medium text-[#94a3b8]">
-                  1.
-                </span>
-                <span className="truncate font-medium">計算機架構總論</span>
-              </div>
-              <span className="text-label-code-sm font-label-code-sm px-1.5 py-0.2 rounded-full bg-[#102a24] text-[#6ee7b7] border border-[#14532d] shrink-0">
-                100%
-              </span>
-            </button>
-            {expandedNodeIds.includes("ch1") && (
-              <div className="pl-6 pr-1 space-y-0.5">
-                <div className="flex items-center justify-between py-1 px-3 rounded hover:bg-[#1c2438]/60 text-[#94a3b8] hover:text-[#f8fafc] cursor-pointer">
-                  <span className="truncate">1.1 馮諾伊曼架構</span>
-                  <span className="material-symbols-outlined text-[13px] text-[#34d399]">
-                    check_circle
-                  </span>
-                </div>
-                <div className="flex items-center justify-between py-1 px-3 rounded hover:bg-[#1c2438]/60 text-[#94a3b8] hover:text-[#f8fafc] cursor-pointer">
-                  <span className="truncate">1.2 哈佛架構對比</span>
-                  <span className="material-symbols-outlined text-[13px] text-[#34d399]">
-                    check_circle
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
+          {/* Render root nodes (chapters) */}
+          {conceptTree.rootNodeIds?.map((rootId) => {
+            const rootNode = conceptTree.nodes?.find((n) => n.conceptId === rootId);
+            if (!rootNode) return null;
+            return renderTreeNode(rootNode, 0);
+          })}
+        </div>
 
-          {/* Chapter 2 (Active Focus) */}
-          <div className="tree-group">
-            <button
-              className={`group flex items-center justify-between px-3 py-1.5 rounded-lg bg-[#19223a] border border-[#2e3b60] text-[#f8fafc] font-semibold cursor-pointer ${!expandedNodeIds.includes("ch2") ? "hover:bg-[#1c2438]":""}`}
-              id="chapter-2-toggle"
-              title="切換第 2 章節"
-              type="button"
-              onClick={(e) => {
-                onNodeExpandToggle("ch2");
-              }}
-            >
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span
-                  className={`material-symbols-outlined text-[16px] text-primary chevron-icon transition-transform ${expandedNodeIds.includes("ch2") ? "rotate-90" : ""}`}
-                >
-                  expand_more
-                </span>
-                <span className="font-label-code-sm text-label-code-sm text-primary font-semibold">
-                  2.
-                </span>
-                <span className="truncate font-semibold text-[#f8fafc]">指令管線化</span>
-              </div>
-              <span className="text-body-sm font-body-sm px-1.5 py-0.5 rounded-full bg-[#1e2238] text-primary shrink-0 font-normal border border-[#3b4277]/50">
-                4 子概念
-              </span>
-            </button>
-            {expandedNodeIds.includes("ch2") && (
-              <div className="pl-5 pr-1 space-y-1 my-1">
-                {/* 2.1 Currently Editing Node */}
-                <div
-                  className={`relative flex items-center justify-between py-1.5 px-3 rounded-lg bg-[#6366f1] text-white shadow-md shadow-indigo-950/60 cursor-pointer ${editingNodeId === "node-2-1" ? "" : ""}`}
-                >
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#38bdf8] animate-pulse"></span>
-                    <span className="font-label-code-sm text-label-code-sm text-white/80">2.1</span>
-                    <span className="truncate font-semibold text-[#f8fafc]">指令管線化</span>
-                  </div>
-                  <span className="text-label-code-sm font-label-code-sm px-1.5 py-0.2 rounded bg-[#312e81] text-[#c0c1ff] font-medium border border-indigo-400/30">
-                    編輯中
-                  </span>
-                </div>
-                {/* 2.2 */}
-                <div className="flex items-center justify-between py-1.5 px-3 rounded-lg hover:bg-[#1c2438] text-[#94a3b8] hover:text-[#f8fafc] cursor-pointer group">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="font-label-code-sm text-label-code-sm text-[#94a3b8]">
-                      2.2
-                    </span>
-                    <span className="truncate">管線冒險 (Hazards)</span>
-                  </div>
-                  <span className="material-symbols-outlined text-[14px] text-[#94a3b8] opacity-0 group-hover:opacity-100">
-                    arrow_forward
-                  </span>
-                </div>
-                {/* 2.3 */}
-                <div className="flex items-center justify-between py-1.5 px-3 rounded-lg hover:bg-[#1c2438] text-[#94a3b8] hover:text-[#f8fafc] cursor-pointer group">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="font-label-code-sm text-label-code-sm text-[#94a3b8]">
-                      2.3
-                    </span>
-                    <span className="truncate">分支預測技術</span>
-                  </div>
-                  <span className="material-symbols-outlined text-[14px] text-[#94a3b8] opacity-0 group-hover:opacity-100">
-                    arrow_forward
-                  </span>
-                </div>
-                {/* 2.4 */}
-                <div className="flex items-center justify-between py-1.5 px-3 rounded-lg hover:bg-[#1c2438] text-[#94a3b8] hover:text-[#f8fafc] cursor-pointer group">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="font-label-code-sm text-label-code-sm text-[#94a3b8]">
-                      2.4
-                    </span>
-                    <span className="truncate">超純量與動態調度</span>
-                  </div>
-                  <span className="material-symbols-outlined text-[14px] text-[#94a3b8] opacity-0 group-hover:opacity-100">
-                    arrow_forward
-                  </span>
-                </div>
-              </div>
-            )}
+        {/* Tree Footer Actions & Drag info */}
+        <div className="p-3 bg-[#0d121c] border-t border-[#1e293b] flex flex-col gap-1 text-body-sm font-body-sm text-[#94a3b8]">
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-1 text-[#34d399]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#34d399]"></span>
+              大綱樹同步完畢
+            </span>
+            <span className="font-label-code-sm text-label-code-sm text-[#94a3b8]">8 章節</span>
           </div>
-
-          {/* Chapter 3 */}
-          <div className="tree-group">
-            <button
-              className={`group flex items-center justify-between px-3 py-1.5 rounded-lg hover:bg-[#1c2438] cursor-pointer text-[#e2e8f0] transition-colors ${expandedNodeIds.includes("ch3") ? "bg-[#19223a] border border-[#2e3b60] text-[#f8fafc] font-semibold" : ""}`}
-              id="chapter-3-toggle"
-              title="切換第 3 章節"
-              type="button"
-              onClick={(e) => {
-                onNodeExpandToggle("ch3");
-              }}
-            >
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span
-                  className={`material-symbols-outlined text-[16px] text-[#94a3b8] chevron-icon transition-transform ${expandedNodeIds.includes("ch3") ? "rotate-90" : ""}`}
-                >
-                  chevron_right
-                </span>
-                <span className="font-label-code-sm text-label-code-sm text-[#94a3b8]">3.</span>
-                <span className="truncate">記憶體階層架構</span>
-              </div>
-              <span className="text-label-code-sm font-label-code-sm px-1.5 py-0.2 rounded-full bg-surface-container-high text-on-surface-variant shrink-0">
-                45%
-              </span>
-            </button>
-            {expandedNodeIds.includes("ch3") && (
-              <div className="pl-6 pr-1 space-y-0.5">
-                <div className="py-1 px-3 rounded hover:bg-[#1c2438]/60 text-[#94a3b8] hover:text-[#f8fafc] cursor-pointer truncate">
-                  3.1 快取記憶體對映原理
-                </div>
-                <div className="py-1 px-3 rounded hover:bg-[#1c2438]/60 text-[#94a3b8] hover:text-[#f8fafc] cursor-pointer truncate">
-                  3.2 快取缺失 (Cache Misses)
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Chapter 4 */}
-          <div className="tree-group">
-            <button
-              className={`group flex items-center justify-between px-3 py-1.5 rounded-lg hover:bg-[#1c2438] cursor-pointer text-[#e2e8f0] transition-colors ${expandedNodeIds.includes("ch4") ? "bg-[#19223a] border border-[#2e3b60] text-[#f8fafc] font-semibold" : ""}`}
-              id="chapter-4-toggle"
-              title="切換第 4 章節"
-              type="button"
-              onClick={(e) => {
-                onNodeExpandToggle("ch4");
-              }}
-            >
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span
-                  className={`material-symbols-outlined text-[16px] text-[#94a3b8] chevron-icon transition-transform ${expandedNodeIds.includes("ch4") ? "rotate-90" : ""}`}
-                >
-                  chevron_right
-                </span>
-                <span className="font-label-code-sm text-label-code-sm text-[#94a3b8]">4.</span>
-                <span className="truncate">虛擬記憶體與 TLB</span>
-              </div>
-              <span className="text-label-code-sm font-label-code-sm px-1.5 py-0.2 rounded-full bg-surface-container-high text-on-surface-variant shrink-0">
-                20%
-              </span>
-            </button>
-            {expandedNodeIds.includes("ch4") && (
-              <div className="pl-6 pr-1 space-y-0.5">
-                <div className="py-1 px-3 rounded hover:bg-[#1c2438]/60 text-[#94a3b8] hover:text-[#f8fafc] cursor-pointer truncate">
-                  4.1 分頁式定址機制 (Paging)
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Chapter 5 */}
-          <div className="tree-group">
-            <div className="group flex items-center justify-between px-3 py-1.5 rounded-lg hover:bg-[#1c2438] cursor-pointer text-[#e2e8f0] transition-colors">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span className="material-symbols-outlined text-[16px] text-[#94a3b8]">
-                  chevron_right
-                </span>
-                <span className="font-label-code-sm text-label-code-sm text-[#94a3b8]">5.</span>
-                <span className="truncate">I/O 與中斷處理系統</span>
-              </div>
-              <span className="text-label-code-sm font-label-code-sm px-1.5 py-0.2 rounded-full bg-surface-container-high text-on-surface-variant shrink-0">
-                0%
-              </span>
-            </div>
-          </div>
-
-          {/* Tree Footer Actions & Drag info */}
-          <div className="p-3 bg-[#0d121c] border-t border-[#1e293b] flex flex-col gap-1 text-body-sm font-body-sm text-[#94a3b8]">
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1 text-[#34d399]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#34d399]"></span>
-                大綱樹同步完畢
-              </span>
-              <span className="font-label-code-sm text-label-code-sm text-[#94a3b8]">8 章節</span>
-            </div>
-            <p className="text-label-code-sm font-label-code-sm text-[#94a3b8]/80 flex items-center gap-1">
-              <span className="material-symbols-outlined text-[13px]">drag_indicator</span>
-              長按可拖曳調換章節層次順序
-            </p>
-          </div>
+          <p className="text-label-code-sm font-label-code-sm text-[#94a3b8]/80 flex items-center gap-1">
+            <span className="material-symbols-outlined text-[13px]">drag_indicator</span>
+            長按可拖曳調換章節層次順序
+          </p>
         </div>
       </aside>
 
@@ -401,7 +330,11 @@ export function TabOutline({
                   <span>聚焦</span>
                 </button>
               </div>
-              <div className="h-4 w-0.5 bg-[#1e293b]" role="separator" aria-label="垂直分隔條"></div>
+              <div
+                className="h-4 w-0.5 bg-[#1e293b]"
+                role="separator"
+                aria-label="垂直分隔條"
+              ></div>
               {/* Secondary Actions */}
               <button
                 className="p-1.5 rounded-lg text-[#94a3b8] hover:text-[#f8fafc] hover:bg-surface-container transition-colors"
@@ -426,31 +359,59 @@ export function TabOutline({
 
           {/* Notion Style Floating Formatting Bar (Compact Subheader) */}
           <div className="h-10 px-4 bg-[#0d1322] border-b border-[#1e293b]/70 flex items-center gap-1 overflow-x-auto text-body-sm font-body-sm shrink-0">
-            <button className="px-2 py-1 rounded hover:bg-surface-container-high text-[#f8fafc] font-bold text-body-sm font-body-sm" type="button">
+            <button
+              className="px-2 py-1 rounded hover:bg-surface-container-high text-[#f8fafc] font-bold text-body-sm font-body-sm"
+              type="button"
+            >
               B
             </button>
-            <button className="px-2 py-1 rounded hover:bg-surface-container-high text-[#f8fafc] italic text-body-sm font-body-sm font-body-sm" type="button">
+            <button
+              className="px-2 py-1 rounded hover:bg-surface-container-high text-[#f8fafc] italic text-body-sm font-body-sm font-body-sm"
+              type="button"
+            >
               I
             </button>
-            <button className="px-2 py-1 rounded hover:bg-surface-container-high text-[#f8fafc] line-through text-body-sm font-body-sm font-body-sm" type="button">
+            <button
+              className="px-2 py-1 rounded hover:bg-surface-container-high text-[#f8fafc] line-through text-body-sm font-body-sm font-body-sm"
+              type="button"
+            >
               S
             </button>
-            <div className="h-3 w-0.5 bg-outline-variant/30 mx-1" role="separator" aria-label="垂直分隔條"></div>
-            <button className="px-2 py-0.5 rounded hover:bg-surface-container-high text-[#f8fafc] font-semibold text-body-sm font-body-sm" type="button">
+            <div
+              className="h-3 w-0.5 bg-outline-variant/30 mx-1"
+              role="separator"
+              aria-label="垂直分隔條"
+            ></div>
+            <button
+              className="px-2 py-0.5 rounded hover:bg-surface-container-high text-[#f8fafc] font-semibold text-body-sm font-body-sm"
+              type="button"
+            >
               H1
             </button>
-            <button className="px-2 py-0.5 rounded hover:bg-surface-container-high text-[#f8fafc] font-semibold text-body-sm font-body-sm" type="button">
+            <button
+              className="px-2 py-0.5 rounded hover:bg-surface-container-high text-[#f8fafc] font-semibold text-body-sm font-body-sm"
+              type="button"
+            >
               H2
             </button>
-            <button className="px-2 py-0.5 rounded hover:bg-surface-container-high text-[#f8fafc] text-body-sm font-body-sm flex items-center" type="button">
+            <button
+              className="px-2 py-0.5 rounded hover:bg-surface-container-high text-[#f8fafc] text-body-sm font-body-sm flex items-center"
+              type="button"
+            >
               <span className="material-symbols-outlined text-[16px]">format_quote</span>
             </button>
-            <button className="px-2 py-0.5 rounded hover:bg-surface-container-high font-label-code-sm text-label-code-sm text-[#f8fafc]" type="button">
+            <button
+              className="px-2 py-0.5 rounded hover:bg-surface-container-high font-label-code-sm text-label-code-sm text-[#f8fafc]"
+              type="button"
+            >
               <span className="material-symbols-outlined text-[14px]">link</span>
               <span>[[雙向連結]]</span>
             </button>
             {/* AI Semantic Enhancer */}
-            <button className="ml-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-[#6366f1] to-[#38bdf8] text-white text-body-sm font-body-sm flex items-center gap-1 shadow-md shadow-indigo-900/30 hover:opacity-95 transition-opacity" type="button">
+            <button
+              className="ml-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-[#6366f1] to-[#38bdf8] text-white text-body-sm font-body-sm flex items-center gap-1 shadow-md shadow-indigo-900/30 hover:opacity-95 transition-opacity"
+              type="button"
+            >
               <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
               <span>語意自動對齊</span>
             </button>
@@ -484,10 +445,21 @@ export function TabOutline({
             </div>
 
             {/* Notion Style Math / Key Takeaway Callout Block (Violet Border + Dark Obsidian) */}
-            <div className="relative overflow-hidden rounded-xl bg-[#131d31] border border-indigo-500/30 p-6 shadow-lg shadow-black/30" role="region" aria-label="關鍵取訊方塊">
-              <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#6366f1]" aria-hidden="true"></div>
+            <div
+              className="relative overflow-hidden rounded-xl bg-[#131d31] border border-indigo-500/30 p-6 shadow-lg shadow-black/30"
+              role="region"
+              aria-label="關鍵取訊方塊"
+            >
+              <div
+                className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#6366f1]"
+                aria-hidden="true"
+              ></div>
               <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-[#1e2238] border border-[#3b4277] text-primary shrink-0" role="img" aria-label="函數圖示">
+                <div
+                  className="p-2 rounded-lg bg-[#1e2238] border border-[#3b4277] text-primary shrink-0"
+                  role="img"
+                  aria-label="函數圖示"
+                >
                   <span className="material-symbols-outlined text-[20px]">functions</span>
                 </div>
                 <div className="space-y-1.5 flex-1 min-w-0">
@@ -519,18 +491,29 @@ export function TabOutline({
             {/* Section: Five-stage Pipeline */}
             <div className="space-y-3 pt-2">
               <div className="flex items-center justify-between">
-                <h2 className="text-headline-lg font-headline-lg text-[#f8fafc] flex items-center gap-2" type="button">
-                  <span className="w-2 h-5 rounded-full bg-secondary" role="img" aria-label="五段階段圖示"></span>
+                <h2 className="text-headline-lg font-headline-lg text-[#f8fafc] flex items-center gap-2">
+                  <span
+                    className="w-2 h-5 rounded-full bg-secondary"
+                    role="img"
+                    aria-label="五段階段圖示"
+                  ></span>
                   經典五大階段 (Five-stage MIPS Pipeline)
                 </h2>
-                <button className="text-body-sm font-body-sm text-primary hover:text-white flex items-center gap-0.5 transition-colors" type="button">
+                <button
+                  className="text-body-sm font-body-sm text-primary hover:text-white flex items-center gap-0.5 transition-colors"
+                  type="button"
+                >
                   <span className="">展開細部電路圖</span>
                   <span className="material-symbols-outlined text-[16px]">chevron_right</span>
                 </button>
               </div>
               {/* Pipeline Interactive Breakdown Visual Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 pt-1">
-                <div className="p-3 rounded-xl bg-[#131d31] border border-[#1e293b] hover:border-indigo-500/50 hover:bg-[#18233a] transition-all" role="img" aria-label="取指階段">
+                <div
+                  className="p-3 rounded-xl bg-[#131d31] border border-[#1e293b] hover:border-indigo-500/50 hover:bg-[#18233a] transition-all"
+                  role="img"
+                  aria-label="取指階段"
+                >
                   <span className="text-label-code-sm font-label-code-sm font-bold text-primary block mb-1">
                     01 / IF
                   </span>
@@ -541,7 +524,11 @@ export function TabOutline({
                     從指令記憶體 (I-Cache) 讀取指令，PC += 4。
                   </div>
                 </div>
-                <div className="p-3 rounded-xl bg-[#131d31] border border-[#1e293b] hover:border-indigo-500/50 hover:bg-[#18233a] transition-all" role="img" aria-label="指令解碼階段">
+                <div
+                  className="p-3 rounded-xl bg-[#131d31] border border-[#1e293b] hover:border-indigo-500/50 hover:bg-[#18233a] transition-all"
+                  role="img"
+                  aria-label="指令解碼階段"
+                >
                   <span className="text-label-code-sm font-label-code-sm font-bold text-primary block mb-1">
                     02 / ID
                   </span>
@@ -549,21 +536,29 @@ export function TabOutline({
                     Instruction Decode
                   </div>
                   <div className="text-body-sm font-body-sm text-[#94a3b8] mt-1">
-                    譯碼控制信號，同時自 Register File 讀取暫存器運算元。
+                    解碼指令，生成控制信號並讀取暫存器。
                   </div>
                 </div>
-                <div className="p-3 rounded-xl bg-[#131d31] border border-[#1e293b] hover:border-indigo-500/50 hover:bg-[#18233a] transition-all" role="img" aria-label="執行階段">
+                <div
+                  className="p-3 rounded-xl bg-[#131d31] border border-[#1e293b] hover:border-indigo-500/50 hover:bg-[#18233a] transition-all"
+                  role="img"
+                  aria-label="執行階段"
+                >
                   <span className="text-label-code-sm font-label-code-sm font-bold text-primary block mb-1">
                     03 / EX
                   </span>
                   <div className="font-semibold text-body-md font-body-md text-[#f8fafc]">
-                    Execution (ALU)
+                    Execute
                   </div>
                   <div className="text-body-sm font-body-sm text-[#94a3b8] mt-1">
-                    執行算術運算或計算記憶體存取位址。
+                    執行運算或邏輯操作，執行分支跳躍。
                   </div>
                 </div>
-                <div className="p-3 rounded-xl bg-[#131d31] border border-[#1e293b] hover:border-indigo-500/50 hover:bg-[#18233a] transition-all" role="img" aria-label="記憶體存取階段">
+                <div
+                  className="p-3 rounded-xl bg-[#131d31] border border-[#1e293b] hover:border-indigo-500/50 hover:bg-[#18233a] transition-all"
+                  role="img"
+                  aria-label="存取階段"
+                >
                   <span className="text-label-code-sm font-label-code-sm font-bold text-primary block mb-1">
                     04 / MEM
                   </span>
@@ -571,10 +566,14 @@ export function TabOutline({
                     Memory Access
                   </div>
                   <div className="text-body-sm font-body-sm text-[#94a3b8] mt-1">
-                    讀取或寫入資料記憶體 (D-Cache)。
+                    讀取或寫入資料記憶體 (D-Cache)，執行載入/存儲指令。
                   </div>
                 </div>
-                <div className="p-3 rounded-xl bg-[#131d31] border border-[#1e293b] hover:border-indigo-500/50 hover:bg-[#18233a] transition-all" role="img" aria-label="寫回階段">
+                <div
+                  className="p-3 rounded-xl bg-[#131d31] border border-[#1e293b] hover:border-indigo-500/50 hover:bg-[#18233a] transition-all"
+                  role="img"
+                  aria-label="寫回階段"
+                >
                   <span className="text-label-code-sm font-label-code-sm font-bold text-primary block mb-1">
                     05 / WB
                   </span>
@@ -582,7 +581,7 @@ export function TabOutline({
                     Write Back
                   </div>
                   <div className="text-body-sm font-body-sm text-[#94a3b8] mt-1">
-                    將結果寫回暫存器檔案。
+                    將結果寫回暫存器，完成指令執行。
                   </div>
                 </div>
               </div>

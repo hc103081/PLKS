@@ -14,7 +14,7 @@ describe("Modal", () => {
     );
     // 檢查遮罩存在 - Modal使用createPortal將內容渲染到document.body
     // 角色屬性設置在Modal容器上
-    const modalElement = document.body.querySelector('[role="dialog"]');
+    const modalElement = document.body.querySelector('[role="dialog"]')!;
     expect(modalElement).toBeInTheDocument();
     expect(screen.getByText(/modal 內容/i)).toBeInTheDocument();
   });
@@ -27,7 +27,7 @@ describe("Modal", () => {
       </Modal>,
     );
     // 先確認Modal是否存在
-    const modalElement = document.body.querySelector('[role="dialog"]');
+    const modalElement = document.body.querySelector('[role="dialog"]')!;
     expect(modalElement).toBeInTheDocument();
 
     // 使用fireEvent模擬Esc鍵按下
@@ -53,7 +53,7 @@ describe("Modal", () => {
       </Modal>,
     );
     // 獲取遮罩元素（role="dialog"的元素）
-    const backdrop = document.body.querySelector('[role="dialog"]');
+    const backdrop = document.body.querySelector('[role="dialog"]')!;
     expect(backdrop).toBeInTheDocument(); // 確認遮罩存在
 
     // 使用fireEvent點擊遮罩
@@ -81,7 +81,7 @@ describe("Modal", () => {
       </Modal>,
     );
     // 獲取遮罩元素
-    const backdrop = document.body.querySelector('[role="dialog"]');
+    const backdrop = document.body.querySelector('[role="dialog"]')!;
     if (backdrop) {
       // 使用fireEvent點擊
       fireEvent.click(backdrop);

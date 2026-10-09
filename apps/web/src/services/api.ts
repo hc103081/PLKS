@@ -132,10 +132,27 @@ export async function getPipelineSummary(): Promise<PipelineSummary> {
 }
 
 export async function createCourse(data: CreateCourseRequest): Promise<void> {
-  await fetchJson(`${API_PREFIX}/courses`, {
+  console.log("[api.ts] createCourse request:", data);
+  const response = await fetch(`${API_BASE_URL}${API_PREFIX}/courses`, {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
+
+  console.log("[api.ts] createCourse response status:", response.status);
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: "Unknown error" }));
+    console.error("[api.ts] createCourse error:", error);
+    throw new Error(error.error ?? `HTTP ${response.status}`);
+  }
+
+  // 檢查回應內容是否包含錯誤
+  const result = await response.json().catch(() => ({}));
+  console.log("[api.ts] createCourse response body:", result);
+  if (result.error) {
+    throw new Error(result.error);
+  }
 }
 
 export async function updateCourse(data: UpdateCourseRequest): Promise<void> {

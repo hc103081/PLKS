@@ -16,7 +16,7 @@ describe("Drawer", () => {
     // 由於Drawer沒有設置role属性，我們使用類別來選擇
     const backdropElement = document.body.querySelector(
       '[class*="fixed inset-0 z-50"][class*="bg-[#000000]/75"]',
-    );
+    )!;
     expect(backdropElement).toBeInTheDocument();
     expect(screen.getByText(/drawer 內容/i)).toBeInTheDocument();
   });
@@ -31,7 +31,7 @@ describe("Drawer", () => {
     // 先確認Drawer是否存在 - 使用類別選擇器
     const backdropElement = document.body.querySelector(
       '[class*="fixed inset-0 z-50"][class*="bg-[#000000]/75"]',
-    );
+    )!;
     expect(backdropElement).toBeInTheDocument();
 
     // 使用fireEvent模擬Esc鍵按下
@@ -59,7 +59,7 @@ describe("Drawer", () => {
     // 獲取遮罩元素
     const backdrop = document.body.querySelector(
       '[class*="fixed inset-0 z-50"][class*="bg-[#000000]/75"]',
-    );
+    )!;
     expect(backdrop).toBeInTheDocument(); // 確認遮罩存在
 
     // 使用fireEvent點擊遮罩
@@ -113,7 +113,7 @@ describe("Drawer", () => {
     // 獲取遮罩元素
     const backdrop = document.body.querySelector(
       '[class*="fixed inset-0 z-50"][class*="bg-[#000000]/75"]',
-    );
+    )!;
     if (backdrop) {
       // 使用fireEvent點擊
       fireEvent.click(backdrop);

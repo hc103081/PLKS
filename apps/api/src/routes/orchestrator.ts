@@ -1,3 +1,4 @@
+import type { IStructuredStore } from "@plks/shared/contracts";
 // apps/api/src/routes/orchestrator.ts
 import type { FastifyInstance, RouteHandlerMethod } from "fastify";
 import { z } from "zod";
@@ -69,18 +70,42 @@ function createRetrySessionHandler(orchestrator: OrchestratorService): RouteHand
   };
 }
 
+function createGetPipelineSummaryHandler(structuredStore: IStructuredStore): RouteHandlerMethod {
+  return async (_request, reply) => {
+    try {
+      const userId = process.env["PLKS_DEV_USER_ID"] ?? "00000000-0000-0000-0000-000000000000";
+      const courses = await structuredStore.getCoursesByUser(userId);
+
+      // For now, return default values since pipelineStage is not in the database schema
+      // TODO: Add pipeline_stage to courses table or fetch from session state
+      return reply.send({
+        inProgress: 0,
+        pending: courses.length,
+        needsAttention: 0,
+        healthy: true,
+        healthPercentage: 100,
+      });
+    } catch (err) {
+      return reply.status(500).send({ error: "Internal server error" });
+    }
+  };
+}
+
 export function registerOrchestratorRoutes(
   app: FastifyInstance,
   orchestrator: OrchestratorService,
+  structuredStore: IStructuredStore,
   prefix = "/api",
 ): void {
   const startSessionHandler = createStartSessionHandler(orchestrator);
   const getSessionStatusHandler = createGetSessionStatusHandler(orchestrator);
   const retrySessionHandler = createRetrySessionHandler(orchestrator);
+  const getPipelineSummaryHandler = createGetPipelineSummaryHandler(structuredStore);
 
   app.post(`${prefix}/orchestrator/start`, startSessionHandler);
   app.get(`${prefix}/orchestrator/status/:sessionId`, getSessionStatusHandler);
   app.post(`${prefix}/orchestrator/retry/:sessionId`, retrySessionHandler);
+  app.get(`${prefix}/pipeline/summary`, getPipelineSummaryHandler);
 }
 
 // Export handlers for testing

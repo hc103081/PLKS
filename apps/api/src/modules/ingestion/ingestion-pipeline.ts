@@ -2,11 +2,11 @@
 import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
 import type { IStorageAdapter } from "@plks/shared/contracts";
+import { DomainError } from "@plks/shared/errors";
 import type { RawAssetPayload } from "@plks/shared/schemas";
 import type { Result } from "neverthrow";
 import { err, ok } from "neverthrow";
 import { RawAsset } from "../../core/entities/raw-asset.js";
-import { DomainError } from "../../core/errors/domain-errors.js";
 import { AudioProcessor } from "./audio-processor.js";
 import { DocumentProcessor } from "./document-processor.js";
 import { FileWatcher } from "./file-watcher.js";

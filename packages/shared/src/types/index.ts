@@ -7,3 +7,5 @@ import type {
 } from "../schemas/index.js";
 
 export type { RawAssetPayload, ConceptNodePayload, QuizItemPayload, UserConfigPayload };
+
+export * from "./database.js";

@@ -17,7 +17,9 @@ const AnswerBodySchema = z.object({
   timeSpentMs: z.number().int().positive(),
 });
 
-export function createStartGameHandler(gamification: GamificationServiceInterface): RouteHandlerMethod {
+export function createStartGameHandler(
+  gamification: GamificationServiceInterface,
+): RouteHandlerMethod {
   return async (request, reply) => {
     const parseResult = CourseParamsSchema.safeParse(request.params);
     if (!parseResult.success) {
@@ -38,7 +40,9 @@ export function createStartGameHandler(gamification: GamificationServiceInterfac
   };
 }
 
-export function createSubmitAnswerHandler(gamification: GamificationServiceInterface): RouteHandlerMethod {
+export function createSubmitAnswerHandler(
+  gamification: GamificationServiceInterface,
+): RouteHandlerMethod {
   return async (request, reply) => {
     const parseResult = AnswerBodySchema.safeParse(request.body);
     if (!parseResult.success) {
@@ -59,7 +63,9 @@ export function createSubmitAnswerHandler(gamification: GamificationServiceInter
   };
 }
 
-export function createRequestHelpHandler(gamification: GamificationServiceInterface): RouteHandlerMethod {
+export function createRequestHelpHandler(
+  gamification: GamificationServiceInterface,
+): RouteHandlerMethod {
   return async (request, reply) => {
     const parseResult = SessionParamsSchema.safeParse(request.params);
     if (!parseResult.success) {
@@ -80,7 +86,9 @@ export function createRequestHelpHandler(gamification: GamificationServiceInterf
   };
 }
 
-export function createGetGameStateHandler(gamification: GamificationServiceInterface): RouteHandlerMethod {
+export function createGetGameStateHandler(
+  gamification: GamificationServiceInterface,
+): RouteHandlerMethod {
   return async (request, reply) => {
     const parseResult = SessionParamsSchema.safeParse(request.params);
     if (!parseResult.success) {

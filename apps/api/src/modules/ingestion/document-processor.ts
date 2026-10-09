@@ -4,9 +4,9 @@ import { tmpdir } from "node:os";
 import { basename, extname, join } from "node:path";
 import { Readable } from "node:stream";
 import type { IStorageAdapter } from "@plks/shared/contracts";
+import { DomainError } from "@plks/shared/errors";
 import type { Result } from "neverthrow";
 import { err, ok } from "neverthrow";
-import { DomainError } from "../../core/errors/domain-errors.js";
 import type { IngestionConfig, VisualAsset } from "./types.js";
 
 export class DocumentProcessor {

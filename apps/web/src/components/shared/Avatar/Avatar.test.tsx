@@ -24,30 +24,36 @@ describe("Avatar", () => {
 
   // Size tests
   it.each([
-    ["xs", 6],
-    ["sm", 8],
-    ["md", 10],
-    ["lg", 12],
-    ["xl", 14],
-  ])("applies size classes correctly for size %s", (size, expectedSize) => {
-    render(<Avatar size={size} />);
-    const fallbackSpan = screen.getByText("person");
-    const innerDiv = fallbackSpan.parentElement as HTMLElement;
-    expect(innerDiv).toHaveClass(`h-${expectedSize}`);
-    expect(innerDiv).toHaveClass(`w-${expectedSize}`);
-  });
+    ["xs", 6] as const,
+    ["sm", 8] as const,
+    ["md", 10] as const,
+    ["lg", 12] as const,
+    ["xl", 14] as const,
+  ])(
+    "applies size classes correctly for size %s",
+    (size: "xs" | "sm" | "md" | "lg" | "xl", expectedSize: number) => {
+      render(<Avatar size={size} />);
+      const fallbackSpan = screen.getByText("person");
+      const innerDiv = fallbackSpan.parentElement as HTMLElement;
+      expect(innerDiv).toHaveClass(`h-${expectedSize}`);
+      expect(innerDiv).toHaveClass(`w-${expectedSize}`);
+    },
+  );
 
   // Variant tests
   it.each([
-    ["default", "rounded-md"],
-    ["circular", "rounded-full"],
-    ["square", "rounded-none"],
-  ])("applies variant classes correctly for variant %s", (variant, expectedClass) => {
-    render(<Avatar variant={variant} />);
-    const fallbackSpan = screen.getByText("person");
-    const innerDiv = fallbackSpan.parentElement as HTMLElement;
-    expect(innerDiv).toHaveClass(expectedClass);
-  });
+    ["default", "rounded-md"] as const,
+    ["circular", "rounded-full"] as const,
+    ["square", "rounded-none"] as const,
+  ])(
+    "applies variant classes correctly for variant %s",
+    (variant: "default" | "circular" | "square", expectedClass: string) => {
+      render(<Avatar variant={variant} />);
+      const fallbackSpan = screen.getByText("person");
+      const innerDiv = fallbackSpan.parentElement as HTMLElement;
+      expect(innerDiv).toHaveClass(expectedClass);
+    },
+  );
 
   it("applies bordered class when bordered is true", () => {
     render(<Avatar bordered />);
@@ -66,13 +72,13 @@ describe("Avatar", () => {
 
   // Dot status indicator tests
   it.each([
-    ["success", "bg-success-fixed"],
-    ["warning", "bg-warning-fixed"],
-    ["error", "bg-error-fixed"],
-    ["default", "bg-primary-fixed"],
+    ["success", "bg-success-fixed"] as const,
+    ["warning", "bg-warning-fixed"] as const,
+    ["error", "bg-error-fixed"] as const,
+    ["default", "bg-primary-fixed"] as const,
   ])(
     "renders dot status indicator with correct color for %s",
-    (statusColor, expectedColorClass) => {
+    (statusColor: "success" | "warning" | "error" | "default", expectedColorClass: string) => {
       render(<Avatar src={testSrc} alt={testAlt} dot statusColor={statusColor} />);
       const img = screen.getByRole("img");
       expect(img).toBeInTheDocument();

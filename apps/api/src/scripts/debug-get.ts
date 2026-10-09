@@ -36,11 +36,18 @@ async function main() {
       );
       console.log(`✅ GET ${key} HTTP 200. Body? ${!!r.Body}`);
     } catch (e: unknown) {
-      const status = e?.$metadata?.httpStatusCode ?? "??";
-      const name = e?.name ?? "Error";
-      const code = e?.Code ?? e?.code ?? "";
+      const err = e as {
+        $metadata?: { httpStatusCode?: number };
+        name?: string;
+        Code?: string;
+        code?: string;
+        message?: string;
+      };
+      const status = err.$metadata?.httpStatusCode ?? "??";
+      const name = err.name ?? "Error";
+      const code = err.Code ?? err.code ?? "";
       console.log(
-        `❌ GET ${key} HTTP ${status} ${name} ${code} msg=${e?.message?.slice(0, 120) ?? ""}`,
+        `❌ GET ${key} HTTP ${status} ${name} ${code} msg=${err.message?.slice(0, 120) ?? ""}`,
       );
     }
   }

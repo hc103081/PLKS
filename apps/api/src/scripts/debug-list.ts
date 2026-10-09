@@ -39,12 +39,13 @@ async function main() {
       await client.send(new GetObjectCommand({ Bucket: bucket, Key: k }));
       console.log("✅ Found:", JSON.stringify(k));
     } catch (e: unknown) {
+      const err = e as { $metadata?: { httpStatusCode?: number }; Code?: string; name?: string };
       console.log(
         "❌",
         JSON.stringify(k),
         "HTTP",
-        e?.$metadata?.httpStatusCode,
-        e?.Code ?? e?.name,
+        err.$metadata?.httpStatusCode,
+        err.Code ?? err.name,
       );
     }
   }

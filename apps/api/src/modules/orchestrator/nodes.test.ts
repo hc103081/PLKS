@@ -2,13 +2,13 @@ import { Readable } from "node:stream";
 import type { IStorageAdapter } from "@plks/shared/contracts";
 import type { IKnowledgeGraphWriter } from "@plks/shared/contracts";
 import type { IAIReasoningGateway } from "@plks/shared/contracts";
+import { DomainError } from "@plks/shared/errors";
 import type { RawAssetPayload } from "@plks/shared/schemas";
 import type { ConceptNodePayload } from "@plks/shared/schemas";
 import type { AiExtractionResult } from "@plks/shared/schemas";
 import { type Result, err, ok } from "neverthrow";
 // apps/api/src/modules/orchestrator/nodes.test.ts
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { DomainError } from "../../core/errors/domain-errors.js";
 import { type PipelineContext, createPipelineNodes } from "./nodes.js";
 
 describe("Pipeline Nodes A-F", () => {

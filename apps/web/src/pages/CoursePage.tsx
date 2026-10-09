@@ -207,7 +207,7 @@ export function CoursePage() {
       <div className="min-h-[calc(100vh-200px)] overflow-auto">
         {tab === "raw" && (
           <TabRaw
-            course={course}
+            course={course!}
             rawAsset={rawAsset}
             sessionId={sessionId}
             activeSubTab={subTab}
@@ -236,14 +236,11 @@ export function CoursePage() {
 
         {tab === "outline" && (
           <TabOutline
-            course={course}
             conceptTree={conceptTree}
-            sessionId={sessionId}
             isLoading={outlineLoading}
             editingNodeId={outline.editingNodeId}
             viewMode={outline.viewMode}
             expandedNodeIds={outline.expandedNodeIds}
-            onEditingNodeChange={setEditingNode}
             onViewModeChange={handleViewModeChange}
             onNodeExpandToggle={toggleNodeExpanded}
           />
@@ -251,10 +248,10 @@ export function CoursePage() {
 
         {tab === "game" && (
           <TabGame
-            course={course}
+            course={course!}
             gameState={gameState}
             gameSession={gameSession}
-            sessionId={sessionId}
+            _sessionId={sessionId}
             isLoading={gameLoading}
             sidekickOpen={game.sidekickOpen}
             onSidekickToggle={() => updateGameProgress({ sidekickOpen: !game.sidekickOpen })}

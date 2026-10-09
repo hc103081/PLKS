@@ -153,7 +153,7 @@ app.get("/health", async () => ({
 }));
 
 // Register orchestrator routes
-registerOrchestratorRoutes(app, orchestratorService, env.API_PREFIX);
+registerOrchestratorRoutes(app, orchestratorService, structuredStore, env.API_PREFIX);
 
 // Register ingestion routes
 registerIngestionRoutes(app, ingestionPipeline, env.API_PREFIX);

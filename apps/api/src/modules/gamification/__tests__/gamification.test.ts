@@ -2,11 +2,11 @@ import { Readable } from "node:stream";
 import type { IStorageAdapter } from "@plks/shared/contracts";
 import type { IAIReasoningGateway } from "@plks/shared/contracts";
 import type { IKnowledgeGraphWriter } from "@plks/shared/contracts";
+import { DomainError } from "@plks/shared/errors";
 import type { ConceptNodePayload, QuizItemPayload } from "@plks/shared/schemas";
 import type { Result } from "neverthrow";
 import { err, ok } from "neverthrow";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { DomainError } from "../../core/errors/domain-errors.js";
 import { createGamificationService } from "../gamification.service.js";
 import { SidekickStateMachine } from "../sidekick-state-machine.js";
 import type { GamificationConfig } from "../types.js";
@@ -14,8 +14,7 @@ import type { GamificationConfig } from "../types.js";
 function createMockStorage(): IStorageAdapter {
   const files = new Map<string, string>();
 
-  const makeErr = (code: string, message: string): DomainError =>
-    ({ code, message, cause: undefined }) as DomainError;
+  const makeErr = (code: string, message: string): DomainError => new DomainError(code, message);
 
   return {
     async uploadFile(path: string, byteStream: Readable): Promise<Result<string, DomainError>> {

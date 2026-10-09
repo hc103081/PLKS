@@ -42,7 +42,7 @@ export function CreateCourseModal({
   const [formData, setFormData] = useState<CreateCourseFormData>({
     code: "",
     name: "",
-    semester: SEMESTERS[2]?.key || "113-1",
+    semester: SEMESTERS[0]?.key ?? "103-1",
     credits: 3,
     type: "required",
     instructor: "",
@@ -51,6 +51,7 @@ export function CreateCourseModal({
     Partial<Record<keyof CreateCourseFormData, string | undefined>>
   >({});
   const [touched, setTouched] = useState<Partial<Record<keyof CreateCourseFormData, boolean>>>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialData) {
@@ -59,7 +60,7 @@ export function CreateCourseModal({
       setFormData({
         code: "",
         name: "",
-        semester: SEMESTERS[2]?.key || "113-1",
+        semester: SEMESTERS[0]?.key ?? "103-1",
         credits: 3,
         type: "required",
         instructor: "",
@@ -67,6 +68,7 @@ export function CreateCourseModal({
     }
     setErrors({});
     setTouched({});
+    setSubmitError(null);
   }, [initialData, isOpen]);
 
   const validateField = (
@@ -76,7 +78,10 @@ export function CreateCourseModal({
     switch (name) {
       case "code":
         if (!value || (value as string).trim().length === 0) return "課程代號為必填";
-        if (!/^[A-Z]{2,4}\d{3}$/i.test(value as string)) return "格式範例: CS101, MA101, PHY101";
+        const codeStr = (value as string).trim();
+        // Allow numeric codes (e.g., 2692) or alphanumeric codes (e.g., CS101, MA101, PHY101)
+        if (!/^(\d{4,6}|[A-Z]{2,4}\d{3,4})$/i.test(codeStr))
+          return "格式範例: 2692, CS101, MA101, PHY101";
         break;
       case "name":
         if (!value || (value as string).trim().length === 0) return "課程完整名稱為必填";
@@ -104,6 +109,7 @@ export function CreateCourseModal({
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log("[CreateCourseModal] handleSubmit called", { formData });
     e.preventDefault();
 
     const newErrors = {} as Partial<Record<keyof CreateCourseFormData, string | undefined>>;
@@ -113,6 +119,11 @@ export function CreateCourseModal({
         newErrors[key as keyof CreateCourseFormData] = error;
       }
     }
+
+    console.log("[CreateCourseModal] validation result", {
+      newErrors,
+      hasErrors: Object.keys(newErrors).length > 0,
+    });
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -124,14 +135,21 @@ export function CreateCourseModal({
         type: true,
         instructor: true,
       });
+      console.log("[CreateCourseModal] validation failed, aborting submit");
       return;
     }
 
+    setSubmitError(null);
+
     try {
+      console.log("[CreateCourseModal] calling onSubmit with", formData);
       await onSubmit(formData);
+      console.log("[CreateCourseModal] onSubmit succeeded, closing modal");
       onClose();
     } catch (error) {
-      console.error("Failed to create course:", error);
+      console.error("[CreateCourseModal] onSubmit failed:", error);
+      const message = error instanceof Error ? error.message : "建立課程失敗，請稍後再試";
+      setSubmitError(message);
     }
   };
 
@@ -189,7 +207,10 @@ export function CreateCourseModal({
         </div>
 
         {/* MODAL SCROLLABLE BODY */}
-        <div className="p-space-lg space-y-6 overflow-y-auto max-h-[calc(85vh-130px)]">
+        <form
+          onSubmit={handleSubmit}
+          className="p-space-lg space-y-6 overflow-y-auto max-h-[calc(85vh-130px)]"
+        >
           {/* 2. FORM FIELDS: BASIC INFORMATION */}
           <section className="space-y-4">
             <div className="flex items-center justify-between">
@@ -222,6 +243,8 @@ export function CreateCourseModal({
                     onChange={(e) => handleChange("name", e.target.value)}
                     onBlur={() => handleBlur("name")}
                     type="text"
+                    required
+                    aria-required="true"
                   />
                 </div>
                 {errors.name && touched.name && (
@@ -246,11 +269,13 @@ export function CreateCourseModal({
                   <input
                     className="w-full bg-surface-container-lowest text-on-surface pl-10 pr-space-md py-2.5 rounded-lg font-label-code-md text-label-code-md focus:outline-none focus:ring-1 focus:ring-primary shadow-inner placeholder:text-on-surface-variant/50 transition-all"
                     id="courseCodeInput"
-                    placeholder="例如：CS101-2026"
+                    placeholder="例如：2692"
                     value={formData.code.toUpperCase()}
                     onChange={(e) => handleChange("code", e.target.value.toUpperCase())}
                     onBlur={() => handleBlur("code")}
                     type="text"
+                    required
+                    aria-required="true"
                   />
                 </div>
                 {errors.code && touched.code && (
@@ -275,6 +300,7 @@ export function CreateCourseModal({
                   <select
                     className="w-full bg-surface-container-lowest text-on-surface pl-10 pr-10 py-2.5 rounded-lg font-body-md text-body-md focus:outline-none focus:ring-1 focus:ring-primary shadow-inner appearance-none cursor-pointer"
                     id="semesterSelect"
+                    name="semester"
                     value={formData.semester}
                     onChange={(e) => handleChange("semester", e.target.value)}
                     onBlur={() => handleBlur("semester")}
@@ -433,7 +459,7 @@ export function CreateCourseModal({
               {/* Toggle 1: Auto-run orchestrator */}
               <label className="flex items-start gap-3 p-3 rounded-xl bg-surface-container-low hover:bg-surface-container cursor-pointer transition-colors shadow-sm">
                 <input
-                  checked={true}
+                  defaultChecked
                   className="mt-1 w-4 h-4 rounded-sm bg-surface-container-lowest text-primary focus:ring-primary focus:ring-offset-0 focus:outline-none"
                   type="checkbox"
                 />
@@ -450,7 +476,7 @@ export function CreateCourseModal({
               {/* Toggle 2: Auto-generate quiz */}
               <label className="flex items-start gap-3 p-3 rounded-xl bg-surface-container-low hover:bg-surface-container cursor-pointer transition-colors shadow-sm">
                 <input
-                  checked={true}
+                  defaultChecked
                   className="mt-1 w-4 h-4 rounded-sm bg-surface-container-lowest text-primary focus:ring-primary focus:ring-offset-0 focus:outline-none"
                   type="checkbox"
                 />
@@ -473,7 +499,7 @@ export function CreateCourseModal({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-sm">
                 <label className="flex items-center gap-3 p-3 rounded-lg bg-surface-container-lowest hover:bg-surface-container cursor-pointer transition-colors shadow-inner">
                   <input
-                    checked={true}
+                    defaultChecked
                     className="w-4 h-4 text-primary bg-surface-container-low focus:ring-primary focus:ring-offset-0"
                     name="alignmentStrategy"
                     type="radio"
@@ -507,39 +533,49 @@ export function CreateCourseModal({
               </div>
             </div>
           </section>
-        </div>
 
-        {/* 5. MODAL FOOTER ACTION BAR */}
-        <div className="p-space-lg bg-surface-container-highest/80 flex flex-col sm:flex-row items-center justify-between gap-space-md">
-          {/* Status Tip */}
-          <div className="flex items-center gap-2 text-on-surface-variant font-label-code-sm text-label-code-sm">
-            <span className="material-symbols-outlined text-secondary text-[16px]">info</span>
-            <span className="truncate max-w-[320px]">
-              建立後配發 sessionId 並導向重點排版工作台
-            </span>
-          </div>
+          {/* 5. MODAL FOOTER ACTION BAR */}
+          <div className="p-space-lg bg-surface-container-highest/80 flex flex-col sm:flex-row items-center justify-between gap-space-md">
+            {/* Submit Error Display */}
+            {submitError && (
+              <div
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-error/10 border border-error/30 text-error font-body-sm text-body-sm animate-in slide-in-from-top-2 duration-200"
+                role="alert"
+              >
+                <span className="material-symbols-outlined text-[18px]">error</span>
+                <span>{submitError}</span>
+              </div>
+            )}
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-space-sm w-full sm:w-auto justify-end">
-            <button
-              className="px-space-lg py-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-body-sm text-body-sm transition-colors shadow-sm"
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-            >
-              取消
-            </button>
-            <button
-              className="px-space-lg py-2.5 rounded-lg bg-primary-container hover:bg-primary-container/90 text-on-primary-container font-body-sm text-body-sm font-semibold flex items-center justify-center gap-space-xs transition-all shadow-[0_0_20px_rgba(128,131,255,0.4)] hover:shadow-[0_0_24px_rgba(128,131,255,0.6)]"
-              type="button"
-              onClick={handleSubmit}
-              disabled={loading}
-            >
-              <span>建立課程並啟動管線</span>
-              <span className="material-symbols-outlined text-[18px]">rocket_launch</span>
-            </button>
+            {/* Status Tip */}
+            <div className="flex items-center gap-2 text-on-surface-variant font-label-code-sm text-label-code-sm">
+              <span className="material-symbols-outlined text-secondary text-[16px]">info</span>
+              <span className="truncate max-w-[320px]">
+                建立後配發 sessionId 並導向重點排版工作台
+              </span>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-space-sm w-full sm:w-auto justify-end">
+              <button
+                className="px-space-lg py-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-body-sm text-body-sm transition-colors shadow-sm"
+                type="button"
+                onClick={onClose}
+                disabled={loading}
+              >
+                取消
+              </button>
+              <button
+                className="px-space-lg py-2.5 rounded-lg bg-primary-container hover:bg-primary-container/90 text-on-primary-container font-body-sm text-body-sm font-semibold flex items-center justify-center gap-space-xs transition-all shadow-[0_0_20px_rgba(128,131,255,0.4)] hover:shadow-[0_0_24px_rgba(128,131,255,0.6)]"
+                type="submit"
+                disabled={loading}
+              >
+                <span>建立課程並啟動管線</span>
+                <span className="material-symbols-outlined text-[18px]">rocket_launch</span>
+              </button>
+            </div>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );

@@ -1,6 +1,8 @@
 import { type FC, type HTMLAttributes, type PropsWithChildren, useState } from "react";
 
-interface InputProps extends PropsWithChildren, HTMLAttributes<HTMLInputElement> {
+interface InputProps
+  extends PropsWithChildren,
+    Omit<HTMLAttributes<HTMLInputElement | HTMLTextAreaElement>, "onChange"> {
   type?: "text" | "password" | "email" | "number" | "textarea";
   placeholder?: string;
   value?: string;
@@ -48,7 +50,7 @@ export const Input: FC<InputProps> = ({
       : `${baseClasses} ${stateClasses.focused} ${stateClasses.error}`;
 
   // 過濾掉我們自己處理的 props，避免衝突
-  const { onChange: _, onFocus: __, onBlur: ___, ...otherProps } = props;
+  const { onFocus: __, onBlur: ___, ...otherProps } = props;
 
   return (
     <div className="flex flex-col gap-1.5">

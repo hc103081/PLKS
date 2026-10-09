@@ -49,24 +49,31 @@ export function Dashboard() {
   }, [semesterFilter]);
 
   async function loadDashboard() {
+    console.log("[Dashboard] loadDashboard start");
     setIsLoading(true);
     try {
       let semesterCode: string | undefined;
       if (semesterFilter !== "all") {
         semesterCode = semesterFilter;
       }
+      console.log("[Dashboard] fetch courses with semesterCode:", semesterCode);
       const coursesData = await getCourses(semesterCode);
+      console.log("[Dashboard] coursesData:", coursesData);
       if (coursesData && coursesData.courses) {
         setCourses(coursesData.courses);
       } else {
         setCourses([]);
       }
 
+      console.log("[Dashboard] fetch pipeline summary");
       const pipelineData = await getPipelineSummary();
+      console.log("[Dashboard] pipelineData:", pipelineData);
       setPipelineSummary(pipelineData);
     } catch (err) {
+      console.error("[Dashboard] loadDashboard error:", err);
       setError(err instanceof Error ? err.message : "載入儀表板失敗");
     } finally {
+      console.log("[Dashboard] loadDashboard finally");
       setIsLoading(false);
     }
   }
@@ -127,12 +134,15 @@ export function Dashboard() {
     instructor?: string;
     location?: string;
   }) => {
+    console.log("[Dashboard] handleCreateCourse called with:", data);
     try {
       setIsLoading(true);
       await createCourse(data);
+      console.log("[Dashboard] createCourse succeeded, reloading dashboard");
       await loadDashboard();
       closeCreateModal();
     } catch (err) {
+      console.error("[Dashboard] createCourse failed:", err);
       setError(err instanceof Error ? err.message : "建立課程失敗");
     } finally {
       setIsLoading(false);
@@ -148,6 +158,7 @@ export function Dashboard() {
   };
 
   if (isLoading) {
+    console.log("[Dashboard] rendering loading state");
     return (
       <div className="flex items-center justify-center h-screen bg-surface-container-lowest">
         載入中...
@@ -237,7 +248,7 @@ export function Dashboard() {
               </button>
               <div className="flex items-center gap-space-sm pl-space-sm border-l border-[#1E293B]">
                 <div className="hidden md:flex flex-col text-right">
-                  <span className="font-body-sm text-body-sm font-bold text-[#F8FAFC] leading-tight">
+                  <span className="font-body-sm text-body-sm font-bold text-[#F8FAFC]">
                     Alex Chen
                   </span>
                   <span className="font-label-code-sm text-label-code-sm text-[#94A3B8]">
@@ -385,17 +396,19 @@ export function Dashboard() {
                 {courses.map((course) => (
                   <CourseCard
                     key={course.id}
-                    course={course}
-                    onViewPipeline={handleViewPipeline}
-                    onRetryPipeline={handleRetryPipeline}
-                    onUploadMaterials={handleUploadMaterials}
-                    onMoreActions={() => {}}
+                    id={course.id}
+                    name={course.name}
+                    semester={course.semester}
+                    status={course.status}
+                    progress={course.progress}
+                    onView={() => console.log("view", course.id)}
+                    onManage={() => console.log("manage", course.id)}
                   />
                 ))}
               </div>
 
               {/* 4. Pipeline Summary Bar - EXACTLY matching design */}
-              <PipelineSummary summary={pipelineSummary} />
+              <PipelineSummary inProgress={pipelineSummary?.inProgress ?? 0} pending={pipelineSummary?.pending ?? 0} needsAttention={pipelineSummary?.needsAttention ?? 0} healthy={pipelineSummary?.healthy ?? true} healthPercentage={pipelineSummary?.healthPercentage ?? 0} />
             </>
           )}
 
@@ -405,6 +418,7 @@ export function Dashboard() {
               isOpen={createModal.open}
               onClose={closeCreateModal}
               onSubmit={handleCreateCourse}
+              loading={isLoading}
               {...(createModal.mode === "edit" ? { initialData: null as any } : {})}
             />
           )}

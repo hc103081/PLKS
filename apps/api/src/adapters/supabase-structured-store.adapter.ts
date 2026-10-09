@@ -1,4 +1,4 @@
-import type { IStructuredStore } from "@plks/shared/contracts";
+import type { CreateCourseInput, IStructuredStore } from "@plks/shared/contracts";
 import { DomainError } from "@plks/shared/errors";
 import type { ConceptNodePayload, QuizItemPayload } from "@plks/shared/schemas";
 import type { Course } from "@plks/shared/types/database";
@@ -41,26 +41,41 @@ export class SupabaseStructuredStore implements IStructuredStore {
   async createCourse(input: CreateCourseInput): Promise<Course> {
     try {
       const userId = this.getUserId();
+      // 只記錄課程欄位，不包含 userId (以避免 TypeScript 重複屬性錯誤)
+      const { userId: _, ...inputWithoutUserId } = input;
+      console.log("[supabase-structured-store] createCourse input:", { ...inputWithoutUserId });
       const { data, error } = await this.supabase
         .from("courses")
         .insert({
           user_id: userId,
-          semester_code: input.semesterCode,
+          semester_code: input.semester,
           code: input.code,
           name: input.name,
-          description: input.description ?? null,
-          cover_image_uri: input.coverImageUri ?? null,
-          b2_export_dir: input.b2ExportDir ?? null,
+          description: null,
+          cover_image_uri: null,
+          b2_export_dir: null,
           status: "active",
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("[supabase-structured-store] Supabase error:", error);
+        // 將 Supabase 錯誤轉換為可序列化的物件
+        const serializableError = {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+        };
+        throw new Error(JSON.stringify(serializableError));
+      }
       if (!data) throw new Error("No data returned");
 
+      console.log("[supabase-structured-store] createCourse success:", data);
       return data as Course;
     } catch (cause) {
+      console.error("[supabase-structured-store] createCourse failed:", cause);
       throw new DomainError("COURSE_CREATE_FAILED", "Failed to create course", cause);
     }
   }
@@ -69,7 +84,7 @@ export class SupabaseStructuredStore implements IStructuredStore {
     try {
       const { data, error } = await this.supabase
         .from("courses")
-        .select("*, semesters!inner(code, year, term, label, sort_order)")
+        .select("*, courses_semester_code_fkey!inner(code, year, term, label, sort_order)")
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
@@ -84,7 +99,7 @@ export class SupabaseStructuredStore implements IStructuredStore {
     try {
       const { data, error } = await this.supabase
         .from("courses")
-        .select("*, semesters!inner(code, year, term, label, sort_order)")
+        .select("*, courses_semester_code_fkey!inner(code, year, term, label, sort_order)")
         .eq("id", id)
         .single();
 
@@ -103,9 +118,14 @@ export class SupabaseStructuredStore implements IStructuredStore {
 
   async updateCourse(id: string, patch: Partial<Course>): Promise<Course> {
     try {
+      // Filter out undefined values for exactOptionalPropertyTypes compatibility
+      const updateData = Object.fromEntries(
+        Object.entries(patch).filter(([, v]) => v !== undefined),
+      ) as Partial<Course>;
+
       const { data, error } = await this.supabase
         .from("courses")
-        .update(patch)
+        .update(updateData)
         .eq("id", id)
         .select()
         .single();
@@ -267,7 +287,7 @@ export class SupabaseStructuredStore implements IStructuredStore {
           insertedItems.push({
             quizId: data.quiz_id,
             courseId: data.course_id,
-            type: data.type as QuizItemPayload["type"],
+            type: data.type as "multiple_choice" | "true_false" | "short_answer",
             question: data.question,
             options: data.options,
             correctAnswer: data.correct_answer,
@@ -304,9 +324,9 @@ export class SupabaseStructuredStore implements IStructuredStore {
       ).map((row) => ({
         quizId: row.quiz_id,
         courseId: row.course_id,
-        type: row.type,
+        type: row.type as "multiple_choice" | "true_false" | "short_answer",
         question: row.question,
-        options: row.options,
+        options: row.options ?? undefined,
         correctAnswer: row.correct_answer,
         contextReference: row.context_reference,
       }));
@@ -337,21 +357,19 @@ export class SupabaseStructuredStore implements IStructuredStore {
   async upsertProgress(progress: ProgressInput): Promise<void> {
     try {
       const userId = this.getUserId();
-      const { error } = await this.supabase
-        .from("user_progress")
-        .upsert({
-          concept_id: progress.concept_id,
-          course_id: progress.course_id,
-          user_id: userId,
-          created_at: progress.created_at,
-          due_date: progress.due_date,
-          ease_factor: progress.ease_factor,
-          id: progress.id,
-          interval_days: progress.interval_days,
-          last_reviewed_at: progress.last_reviewed_at,
-          repetitions: progress.repetitions,
-          updated_at: progress.updated_at,
-        });
+      const { error } = await this.supabase.from("user_progress").upsert({
+        concept_id: progress.concept_id,
+        course_id: progress.course_id,
+        user_id: userId,
+        created_at: progress.created_at,
+        due_date: progress.due_date,
+        ease_factor: progress.ease_factor,
+        id: progress.id,
+        interval_days: progress.interval_days,
+        last_reviewed_at: progress.last_reviewed_at,
+        repetitions: progress.repetitions,
+        updated_at: progress.updated_at,
+      });
 
       if (error) throw error;
     } catch (cause) {
@@ -381,19 +399,17 @@ export class SupabaseStructuredStore implements IStructuredStore {
   }
   async logAnswer(log: AnswerLogInput): Promise<void> {
     try {
-      const { error } = await this.supabase
-        .from("answer_logs")
-        .insert({
-          course_id: log.course_id,
-          id: log.id,
-          is_correct: log.is_correct,
-          quiz_id: log.quiz_id,
-          response_time_ms: log.response_time_ms,
-          sidekick_context: log.sidekick_context,
-          sidekick_used: log.sidekick_used,
-          user_answer: log.user_answer,
-          user_id: this.getUserId(),
-        });
+      const { error } = await this.supabase.from("answer_logs").insert({
+        course_id: log.course_id,
+        id: log.id,
+        is_correct: log.is_correct,
+        quiz_id: log.quiz_id,
+        response_time_ms: log.response_time_ms,
+        sidekick_context: log.sidekick_context,
+        sidekick_used: log.sidekick_used,
+        user_answer: log.user_answer,
+        user_id: this.getUserId(),
+      });
 
       if (error) throw error;
     } catch (cause) {
@@ -420,15 +436,13 @@ export class SupabaseStructuredStore implements IStructuredStore {
   }
   async appendChatMessage(msg: ChatMessageInput): Promise<void> {
     try {
-      const { error } = await this.supabase
-        .from("chat_messages")
-        .insert({
-          content: msg.content,
-          id: msg.id,
-          metadata: msg.metadata,
-          role: msg.role,
-          session_id: msg.session_id,
-        });
+      const { error } = await this.supabase.from("chat_messages").insert({
+        content: msg.content,
+        id: msg.id,
+        metadata: msg.metadata,
+        role: msg.role,
+        session_id: msg.session_id,
+      });
 
       if (error) throw error;
     } catch (cause) {
