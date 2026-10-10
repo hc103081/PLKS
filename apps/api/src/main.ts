@@ -51,6 +51,10 @@ const { registerGamificationRoutes } = await import("./routes/gamification.js");
 // Import courses components
 const { registerCoursesRoutes } = await import("./routes/courses.js");
 
+// Import export components
+const { ExportService } = await import("./modules/export/export.service.js");
+const { registerExportRoutes } = await import("./routes/export.js");
+
 const env = loadEnv();
 
 // Initialize adapters
@@ -114,6 +118,9 @@ const gamificationService = createGamificationService(
   gamificationConfig,
 );
 
+// Initialize export service
+const exportService = new ExportService(storageAdapter, structuredStore, knowledgeGraphWriter);
+
 const loggerConfig = {
   level: env.LOG_LEVEL,
   ...(env.NODE_ENV === "development" ? { transport: { target: "pino-pretty" } } : {}),
@@ -163,6 +170,9 @@ registerGamificationRoutes(app, gamificationService, env.API_PREFIX);
 
 // Register courses routes
 registerCoursesRoutes(app, structuredStore, env.API_PREFIX);
+
+// Register export routes
+registerExportRoutes(app, exportService, env.API_PREFIX);
 
 async function start(): Promise<void> {
   try {

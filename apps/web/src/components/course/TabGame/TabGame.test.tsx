@@ -5,6 +5,10 @@ import type { GameSession, GameSessionState, QuizItemPayload } from "../../../ty
 import type { CourseCardData } from "../../../types/course";
 import { TabGame } from "./TabGame";
 
+const mockOnAnswerSubmit = vi.fn().mockResolvedValue({ isCorrect: true, xpEarned: 100 });
+const mockOnSidekickRequest = vi.fn().mockResolvedValue(undefined);
+const mockOnSidekickSendMessage = vi.fn().mockResolvedValue(undefined);
+
 describe("TabGame", () => {
   const createMockCourse = (overrides: Partial<CourseCardData> = {}): CourseCardData => ({
     id: "cs101",
@@ -94,6 +98,9 @@ describe("TabGame", () => {
         isLoading={false}
         sidekickOpen={false}
         onSidekickToggle={() => {}}
+        onAnswerSubmit={mockOnAnswerSubmit}
+        onSidekickRequest={mockOnSidekickRequest}
+        onSidekickSendMessage={mockOnSidekickSendMessage}
       />,
     );
 
@@ -120,6 +127,9 @@ describe("TabGame", () => {
         isLoading={false}
         sidekickOpen={false}
         onSidekickToggle={onSidekickToggle}
+        onAnswerSubmit={mockOnAnswerSubmit}
+        onSidekickRequest={mockOnSidekickRequest}
+        onSidekickSendMessage={mockOnSidekickSendMessage}
       />,
     );
 
@@ -147,6 +157,9 @@ describe("TabGame", () => {
         isLoading={false}
         sidekickOpen={false}
         onSidekickToggle={() => {}}
+        onAnswerSubmit={mockOnAnswerSubmit}
+        onSidekickRequest={mockOnSidekickRequest}
+        onSidekickSendMessage={mockOnSidekickSendMessage}
       />,
     );
 

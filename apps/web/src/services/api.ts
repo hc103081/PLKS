@@ -93,9 +93,8 @@ export async function getIngestionStatus(): Promise<{
 
 // Gamification API
 export async function startGame(courseId: string): Promise<StartGameResponse> {
-  return fetchJson<StartGameResponse>(`${API_PREFIX}/gamification/start`, {
+  return fetchJson<StartGameResponse>(`${API_PREFIX}/gamification/quiz/${courseId}`, {
     method: "POST",
-    body: JSON.stringify({ courseId }),
   });
 }
 
@@ -114,7 +113,25 @@ export async function requestSidekickHelp(sessionId: string): Promise<SidekickRe
 }
 
 export async function getGameState(sessionId: string): Promise<GameSession> {
-  return fetchJson<GameSession>(`${API_PREFIX}/gamification/state/${sessionId}`);
+  return fetchJson<GameSession>(`${API_PREFIX}/gamification/session/${sessionId}`);
+}
+
+// Export API
+export interface ExportTriggerResponse {
+  success: boolean;
+  data: ExportResult;
+}
+
+export interface ExportResult {
+  conceptNodesExported: number;
+  quizItemsExported: number;
+  indexExported: boolean;
+}
+
+export async function triggerExport(courseId: string): Promise<ExportTriggerResponse> {
+  return fetchJson<ExportTriggerResponse>(`${API_PREFIX}/export/course/${courseId}`, {
+    method: "POST",
+  });
 }
 
 // Course management APIs

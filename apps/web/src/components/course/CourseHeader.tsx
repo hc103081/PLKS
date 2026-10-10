@@ -1,4 +1,6 @@
+import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { triggerExport } from "../../services/api";
 import type { CourseCardData, CourseTab } from "../../types/course";
 
 interface CourseHeaderProps {
@@ -26,6 +28,17 @@ export function CourseHeader({
   onStartSession,
 }: CourseHeaderProps) {
   const _navigate = useNavigate();
+
+  const exportMutation = useMutation({
+    mutationFn: (courseId: string) => triggerExport(courseId),
+    onSuccess: () => {
+      // Could show a toast notification here
+      console.log("Export triggered successfully");
+    },
+    onError: (error) => {
+      console.error("Export failed:", error);
+    },
+  });
 
   const handleTabClick = (tab: CourseTab) => {
     if (tab === "pipeline" && !sessionId) {
@@ -97,6 +110,18 @@ export function CourseHeader({
               <span>啟動管線</span>
             </button>
           )}
+          <button
+            onClick={() => exportMutation.mutate(course.id)}
+            disabled={exportMutation.isPending}
+            className="btn-secondary hidden sm:flex"
+            type="button"
+            data-testid="export-obsidian-btn"
+          >
+            <span className="material-symbols-outlined text-[16px]">
+              {exportMutation.isPending ? "sync" : "cloud_download"}
+            </span>
+            <span>{exportMutation.isPending ? "導出中..." : "導出 Obsidian"}</span>
+          </button>
           <button className="btn-ghost w-9 h-9" aria-label="更多選項" type="button">
             <span className="material-symbols-outlined text-[20px]">more_vert</span>
           </button>

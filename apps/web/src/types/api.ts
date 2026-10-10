@@ -101,6 +101,14 @@ export interface SidekickResponse {
   actionableHint: string;
   encouragement: string;
   relatedSlideUris: string[];
+  contextReferences?: ContextReference[];
+}
+
+export interface ContextReference {
+  type: "concept" | "slide" | "quiz";
+  title: string;
+  content: string;
+  source?: string;
 }
 
 /** Game Session State - used by TabGame for local UI state */

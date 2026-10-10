@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { CourseHeader } from "../components/course/CourseHeader";
@@ -15,9 +15,12 @@ import {
   getGameState,
   getPipelineStatus,
   getRawAsset,
+  requestSidekickHelp,
   startSession,
+  submitAnswer,
 } from "../services/api";
 import { useCoursePageStore } from "../stores/coursePageStore";
+import type { QuizItemPayload } from "../types/api";
 import type {
   CourseCardData,
   CourseTab,
@@ -57,6 +60,51 @@ export function CoursePage() {
     setRawCurrentTime,
     setRawCurrentSlide,
   } = useCoursePageStore();
+
+  const queryClient = useQueryClient();
+
+  // Game API handlers
+  const handleAnswerSubmit = async (
+    answer: string,
+    timeSpentMs: number,
+  ): Promise<{ isCorrect: boolean; xpEarned: number; nextQuiz?: QuizItemPayload }> => {
+    if (!sessionId) return { isCorrect: false, xpEarned: 0 };
+    try {
+      const result = await submitAnswer({ sessionId, userAnswer: answer, timeSpentMs });
+      // Invalidate queries to refetch updated game state
+      queryClient.invalidateQueries({ queryKey: ["game-session-state", sessionId] });
+      queryClient.invalidateQueries({ queryKey: ["game-session", sessionId] });
+      if (result.nextQuiz) {
+        return {
+          isCorrect: result.isCorrect,
+          xpEarned: result.xpEarned,
+          nextQuiz: result.nextQuiz,
+        };
+      }
+      return { isCorrect: result.isCorrect, xpEarned: result.xpEarned };
+    } catch (error) {
+      console.error("Failed to submit answer:", error);
+      return { isCorrect: false, xpEarned: 0 };
+    }
+  };
+
+  const handleSidekickRequest = async () => {
+    if (!sessionId) return;
+    try {
+      await requestSidekickHelp(sessionId);
+      // Invalidate queries to refetch updated game state
+      queryClient.invalidateQueries({ queryKey: ["game-session-state", sessionId] });
+      queryClient.invalidateQueries({ queryKey: ["game-session", sessionId] });
+    } catch (error) {
+      console.error("Failed to request sidekick help:", error);
+    }
+  };
+
+  const handleSidekickSendMessage = async (message: string) => {
+    // For now, just log - the Sidekick chat would need a separate API endpoint
+    console.log("Sidekick message:", message);
+    // TODO: Implement sidekick chat API
+  };
 
   // Fetch course data
   const { data: course, isLoading: courseLoading } = useQuery({
@@ -255,6 +303,9 @@ export function CoursePage() {
             isLoading={gameLoading}
             sidekickOpen={game.sidekickOpen}
             onSidekickToggle={() => updateGameProgress({ sidekickOpen: !game.sidekickOpen })}
+            onAnswerSubmit={handleAnswerSubmit}
+            onSidekickRequest={handleSidekickRequest}
+            onSidekickSendMessage={handleSidekickSendMessage}
           />
         )}
       </div>

@@ -62,6 +62,10 @@ export class DomainError extends Error {
   static invalidInput(message: string): DomainError {
     return new DomainError("INVALID_INPUT", message);
   }
+
+  static exportFailed(cause?: unknown): DomainError {
+    return new DomainError("EXPORT_FAILED", "Failed to export course to B2", cause);
+  }
 }
 
 export type DomainResult<T> = Result<T, DomainError>;

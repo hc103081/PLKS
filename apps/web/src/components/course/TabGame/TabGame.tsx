@@ -18,6 +18,12 @@ interface TabGameProps {
   isLoading: boolean;
   sidekickOpen: boolean;
   onSidekickToggle: () => void;
+  onAnswerSubmit: (
+    answer: string,
+    timeSpentMs: number,
+  ) => Promise<{ isCorrect: boolean; xpEarned: number; nextQuiz?: QuizItemPayload }>;
+  onSidekickRequest: () => Promise<void>;
+  onSidekickSendMessage: (message: string) => Promise<void>;
 }
 
 export function TabGame({
@@ -28,6 +34,9 @@ export function TabGame({
   isLoading,
   sidekickOpen,
   onSidekickToggle,
+  onAnswerSubmit,
+  onSidekickRequest,
+  onSidekickSendMessage,
 }: TabGameProps) {
   if (isLoading || !gameState) {
     return (
@@ -48,10 +57,63 @@ export function TabGame({
   const progress =
     gameState.totalQuizzes > 0 ? (gameState.currentQuizIndex / gameState.totalQuizzes) * 100 : 0;
 
-  const currentQuiz =
+  const currentQuizRaw =
     gameState.currentQuizIndex < (gameSession?.quizItems?.length || 0)
       ? gameSession?.quizItems?.[gameState.currentQuizIndex]
       : null;
+
+  const currentQuiz: CurrentQuiz | null = currentQuizRaw
+    ? {
+        question: currentQuizRaw.question,
+        type: currentQuizRaw.type,
+        correctAnswer: currentQuizRaw.correctAnswer,
+        options: currentQuizRaw.options,
+        difficulty: undefined,
+      }
+    : null;
+
+  const [submitting, setSubmitting] = React.useState(false);
+  const [answerStartTime, setAnswerStartTime] = React.useState(Date.now());
+
+  const handleAnswerSubmit = async (answer: string) => {
+    if (submitting || !currentQuiz) return;
+    setSubmitting(true);
+    try {
+      const timeSpentMs = Date.now() - answerStartTime;
+      const _result = await onAnswerSubmit(answer, timeSpentMs);
+      // Note: State updates are handled by parent (CoursePage) via query invalidation
+      // We just need to reset the local UI state
+      setAnswerStartTime(Date.now());
+    } catch (error) {
+      console.error("Failed to submit answer:", error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSidekickRequest = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      await onSidekickRequest();
+    } catch (error) {
+      console.error("Failed to request sidekick help:", error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSidekickMessage = async (message: string) => {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      await onSidekickSendMessage(message);
+    } catch (error) {
+      console.error("Failed to send sidekick message:", error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="h-[calc(100vh-200px)] max-w-[1440px] mx-auto p-4 lg:p-6">
@@ -64,10 +126,12 @@ export function TabGame({
           course={course}
           gameState={gameState}
           currentQuiz={currentQuiz}
+          currentQuizRaw={currentQuizRaw ?? null}
           progress={progress}
           gameSession={gameSession}
           onAnswerSubmit={handleAnswerSubmit}
-          onSidekickClick={onSidekickToggle}
+          onSidekickClick={handleSidekickRequest}
+          submitting={submitting}
         />
 
         {/* Sidebar: Sidekick */}
@@ -77,6 +141,8 @@ export function TabGame({
             currentQuiz={currentQuiz}
             onClose={onSidekickToggle}
             onSendMessage={handleSidekickMessage}
+            onQuickAction={(msg) => handleSidekickMessage(msg)}
+            submitting={submitting}
           />
         )}
       </div>
@@ -84,45 +150,47 @@ export function TabGame({
   );
 }
 
-function handleAnswerSubmit(answer: string, isCorrect: boolean) {
-  // TODO: Implement answer submission
-  console.log("Answer submitted:", answer, isCorrect);
-}
-
-function handleSidekickMessage(message: string) {
-  // TODO: Implement sidekick message
-  console.log("Sidekick message:", message);
-}
-
 // Game Quiz Player Component
+interface CurrentQuiz {
+  question: string;
+  type: string;
+  correctAnswer: string;
+  options?: string[] | undefined;
+  difficulty?: number | undefined;
+}
+
 function GameQuizPlayer({
   course,
   gameState,
   currentQuiz,
+  currentQuizRaw,
   progress,
   gameSession,
   onAnswerSubmit,
   onSidekickClick,
+  submitting,
 }: {
-  course: any;
+  course: CourseCardData | undefined;
   gameState: GameSessionState;
-  currentQuiz: any;
+  currentQuiz: CurrentQuiz | null;
+  currentQuizRaw: QuizItemPayload | null;
   progress: number;
   gameSession: GameSession | undefined;
-  onAnswerSubmit: (answer: string, isCorrect: boolean) => void;
+  onAnswerSubmit: (answer: string) => void;
   onSidekickClick: () => void;
+  submitting: boolean;
 }) {
   const [userAnswer, setUserAnswer] = React.useState("");
   const [showFeedback, setShowFeedback] = React.useState(false);
   const [isCorrect, setIsCorrect] = React.useState(false);
 
   const handleSubmit = () => {
-    if (!userAnswer.trim()) return;
+    if (!userAnswer.trim() || submitting) return;
     const correct =
       currentQuiz?.correctAnswer?.toLowerCase().trim() === userAnswer.toLowerCase().trim();
     setIsCorrect(correct);
     setShowFeedback(true);
-    onAnswerSubmit(userAnswer, correct);
+    onAnswerSubmit(userAnswer);
   };
 
   const handleNext = () => {
@@ -137,7 +205,8 @@ function GameQuizPlayer({
       <div className="p-4 border-b border-outline flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="relative w-12 h-12">
-            <svg className="w-full h-full -rotate-90">
+            <svg className="w-full h-full -rotate-90" aria-label="進度環" role="img">
+              <title>進度環</title>
               <circle
                 className="stroke-outline"
                 cx="18"
@@ -171,7 +240,12 @@ function GameQuizPlayer({
             </p>
           </div>
         </div>
-        <button onClick={onSidekickClick} className="btn-primary" disabled={showFeedback}>
+        <button
+          onClick={onSidekickClick}
+          className="btn-primary"
+          disabled={showFeedback}
+          data-testid="sidekick-btn"
+        >
           <span className="material-symbols-outlined text-[18px]">psychology</span>
           <span>呼叫 Sidekick</span>
         </button>
@@ -198,13 +272,16 @@ function GameQuizPlayer({
             </div>
 
             {/* Question */}
-            <div className="mb-6 p-4 bg-surface-container-low rounded-lg border border-outline">
+            <div
+              className="mb-6 p-4 bg-surface-container-low rounded-lg border border-outline"
+              data-testid="quiz-question"
+            >
               <p className="font-headline-sm text-on-surface">{currentQuiz.question}</p>
             </div>
 
             {/* Answer Input */}
             {!showFeedback && (
-              <div className="mb-6">
+              <div className="mb-6" data-testid="quiz-answer-input">
                 {currentQuiz.type === "multiple_choice" && currentQuiz.options ? (
                   <div className="space-y-2" role="radiogroup" aria-label="選擇答案">
                     {currentQuiz.options.map((option: string, index: number) => (
@@ -268,16 +345,17 @@ function GameQuizPlayer({
               {!showFeedback ? (
                 <button
                   onClick={handleSubmit}
-                  disabled={!userAnswer.trim()}
+                  disabled={!userAnswer.trim() || submitting}
                   className="btn-primary flex-1"
+                  data-testid="submit-answer-btn"
                 >
                   <span className="material-symbols-outlined text-[18px]">send</span>
-                  提交答案
+                  {submitting ? "提交中..." : "提交答案"}
                 </button>
               ) : (
                 <>
                   <div className="flex-1" />
-                  <button onClick={handleNext} className="btn-primary">
+                  <button onClick={handleNext} className="btn-primary" disabled={submitting}>
                     <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
                     下一題
                   </button>
@@ -309,15 +387,15 @@ function GameQuizPlayer({
                       {isCorrect ? "答對了！太棒了！" : "答錯了，繼續加油！"}
                     </p>
                     <p className="font-body-sm text-on-surface-variant mt-1">
-                      正確答案：{currentQuiz.correctAnswer}
+                      正確答案：{currentQuiz?.correctAnswer}
                     </p>
                   </div>
                 </div>
-                {currentQuiz.contextReference && (
+                {currentQuizRaw?.contextReference && (
                   <div className="mt-3 p-3 bg-surface-container-low rounded border border-outline">
                     <p className="font-label-code-sm text-on-surface-variant">相關概念參考</p>
                     <p className="font-body-sm text-on-surface mt-1">
-                      {currentQuiz.contextReference}
+                      {currentQuizRaw?.contextReference}
                     </p>
                   </div>
                 )}
@@ -381,11 +459,15 @@ function GameSidekickSidebar({
   currentQuiz,
   onClose,
   onSendMessage,
+  onQuickAction,
+  submitting,
 }: {
   gameState: GameSessionState;
-  currentQuiz: any;
+  currentQuiz: CurrentQuiz | null;
   onClose: () => void;
   onSendMessage: (message: string) => void;
+  onQuickAction: (message: string) => void;
+  submitting: boolean;
 }) {
   const [message, setMessage] = React.useState("");
   const [messages, setMessages] = React.useState<SidekickMessage[]>([
@@ -412,7 +494,10 @@ function GameSidekickSidebar({
   };
 
   return (
-    <div className="card-base flex flex-col h-full animate-in slide-in-right">
+    <div
+      className="card-base flex flex-col h-full animate-in slide-in-right"
+      data-testid="sidekick-sidebar"
+    >
       {/* Header */}
       <div className="p-4 border-b border-outline flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -421,7 +506,7 @@ function GameSidekickSidebar({
           </div>
           <h4 className="font-title-md font-bold text-on-surface">Sidekick</h4>
         </div>
-        <button onClick={onClose} className="btn-ghost p-2">
+        <button onClick={onClose} className="btn-ghost p-2" data-testid="sidekick-close-btn">
           <span className="material-symbols-outlined text-[20px]">close</span>
         </button>
       </div>
@@ -464,29 +549,33 @@ function GameSidekickSidebar({
           <p className="font-label-code-sm font-bold text-on-surface-variant">快速提問</p>
           <div className="grid grid-cols-2 gap-2">
             <button
-              onClick={() => onSendMessage("請詳細解釋這個概念")}
+              onClick={() => onQuickAction("請詳細解釋這個概念")}
               className="btn-secondary text-xs py-2"
+              disabled={submitting}
             >
               <span className="material-symbols-outlined text-[14px]">lightbulb</span>
               概念解釋
             </button>
             <button
-              onClick={() => onSendMessage("給我一些解題提示")}
+              onClick={() => onQuickAction("給我一些解題提示")}
               className="btn-secondary text-xs py-2"
+              disabled={submitting}
             >
               <span className="material-symbols-outlined text-[14px]">tips_and_updates</span>
               解題提示
             </button>
             <button
-              onClick={() => onSendMessage("哪張投影片有相關內容？")}
+              onClick={() => onQuickAction("哪張投影片有相關內容？")}
               className="btn-secondary text-xs py-2"
+              disabled={submitting}
             >
               <span className="material-symbols-outlined text-[14px]">picture_as_pdf</span>
               參考投影片
             </button>
             <button
-              onClick={() => onSendMessage("為什麼這個答案是錯的？")}
+              onClick={() => onQuickAction("為什麼這個答案是錯的？")}
               className="btn-secondary text-xs py-2"
+              disabled={submitting}
             >
               <span className="material-symbols-outlined text-[14px]">error</span>
               錯誤分析
@@ -496,7 +585,7 @@ function GameSidekickSidebar({
       )}
 
       {/* Input */}
-      <div className="p-4 border-t border-outline">
+      <div className="p-4 border-t border-outline" data-testid="sidekick-input-area">
         <div className="flex gap-2">
           <input
             type="text"
@@ -505,8 +594,15 @@ function GameSidekickSidebar({
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
             placeholder="輸入問題..."
             className="flex-1 input-base"
+            disabled={submitting}
+            data-testid="sidekick-message-input"
           />
-          <button onClick={handleSend} disabled={!message.trim()} className="btn-primary">
+          <button
+            onClick={handleSend}
+            disabled={!message.trim() || submitting}
+            className="btn-primary"
+            data-testid="sidekick-send-btn"
+          >
             <span className="material-symbols-outlined text-[20px]">send</span>
           </button>
         </div>
