@@ -1,7 +1,8 @@
 # Railway 部署配置
 [build]
 builder = "nixpacks"
-buildCommand = "cd apps/api && npm ci && npm run build"
+# 在 monorepo 根目錄安裝依賴，再建置 api
+buildCommand = "corepack enable && pnpm install --frozen-lockfile && pnpm --filter api run build"
 
 [deploy]
 startCommand = "cd apps/api && node dist/main.js"
@@ -11,3 +12,6 @@ restartPolicyMaxRetries = 10
 # 健康檢查
 healthcheckPath = "/health"
 healthcheckTimeout = 100
+
+# 環境變數會在 Railway Dashboard 設定
+# 不要在這裡硬編碼 secret
