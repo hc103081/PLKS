@@ -21,12 +21,21 @@ export interface QuizAnswer {
   timeSpentMs: number;
 }
 
+/** Reference to a piece of content that can be shown as context */
+export interface ContextReference {
+  type: "concept" | "slide" | "quiz";
+  title: string;
+  content: string;
+  source?: string;
+}
+
 export interface SidekickResponse {
   explanation: string;
   keyConcept: string;
   actionableHint: string;
   encouragement: string;
   relatedSlideUris: string[];
+  contextReferences?: ContextReference[];
 }
 
 export interface GameSession {

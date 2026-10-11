@@ -1,7 +1,7 @@
 // apps/web/src/pages/CourseConsole.tsx
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { getSessionStatus } from "../services/api.js";
+import { getSessionStatus, triggerExport } from "../services/api.js";
 
 interface ConceptNode {
   conceptId: string;
@@ -12,6 +12,12 @@ interface ConceptNode {
     transcriptRef: string;
     slideUri: string;
   };
+}
+
+export interface ExportResult {
+  conceptNodesExported: number;
+  quizItemsExported: number;
+  indexExported: boolean;
 }
 
 export function CourseConsole() {
@@ -25,6 +31,9 @@ export function CourseConsole() {
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportSuccess, setExportSuccess] = useState<ExportResult | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   useEffect(() => {
     if (courseId) {
@@ -55,7 +64,7 @@ export function CourseConsole() {
           conceptId: "2",
           term: "神經網絡",
           explanation: "受生物神經網絡啟發的計算系統，能學習模式。",
-          relatedTerms: ["深度學習", "機器學習", "反向傳播"],
+          relatedTerms: ["深度學習", "神經網絡", "反向傳播"],
           sourceEvidence: {
             transcriptRef: "00:12:00-00:15:30",
             slideUri: "s3://bucket/vault/CS101/_assets/slide-2.png",
@@ -88,6 +97,27 @@ export function CourseConsole() {
       }
     } catch (err) {
       console.error("Failed to poll session status:", err);
+    }
+  }
+
+  async function handleExport() {
+    if (!courseId) return;
+
+    setExporting(true);
+    setExportError(null);
+    setExportSuccess(null);
+
+    try {
+      const result = await triggerExport(courseId);
+      if (result.success) {
+        setExportSuccess(result.data);
+      } else {
+        setExportError("導出失敗");
+      }
+    } catch (err) {
+      setExportError(err instanceof Error ? err.message : "導出失敗");
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -144,11 +174,54 @@ export function CourseConsole() {
               )}
             </div>
           )}
+          {!exporting && (
+            <button
+              onClick={handleExport}
+              className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition disabled:opacity-50"
+              disabled={exporting}
+            >
+              {exporting ? "導出中..." : "導出到 Obsidian"}
+            </button>
+          )}
+          {exporting && <div className="px-4 py-2 bg-indigo-600 text-white rounded">導出中...</div>}
         </header>
 
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
             {error}
+          </div>
+        )}
+
+        {exportError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+            {exportError}
+            <button
+              onClick={() => setExportError(null)}
+              className="ml-2 px-2 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
+        {exportSuccess && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
+            <div className="flex items-center justify-between">
+              <div>
+                導出成功！已導出：
+                <div className="mt-1">
+                  <span className="mr-3">概念節點: {exportSuccess.conceptNodesExported}</span>
+                  <span className="mr-3">題目: {exportSuccess.quizItemsExported}</span>
+                  <span>課程索引: {exportSuccess.indexExported ? "是" : "否"}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setExportSuccess(null)}
+                className="ml-2 px-2 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+              >
+                ×
+              </button>
+            </div>
           </div>
         )}
 

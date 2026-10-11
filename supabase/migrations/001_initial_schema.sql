@@ -14,6 +14,7 @@ BEGIN
     END IF;
 END $$;
 CREATE EXTENSION IF NOT EXISTS "pg_cron";
+CREATE EXTENSION IF NOT EXISTS pg_net;
 
 -- ============================================================
 -- semesters 學期表

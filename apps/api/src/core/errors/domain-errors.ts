@@ -66,6 +66,9 @@ export class DomainError extends Error {
   static exportFailed(cause?: unknown): DomainError {
     return new DomainError("EXPORT_FAILED", "Failed to export course to B2", cause);
   }
+  static failedPrecondition(message: string): DomainError {
+    return new DomainError("FAILED_PRECONDITION", message);
+  }
 }
 
 export type DomainResult<T> = Result<T, DomainError>;

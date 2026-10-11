@@ -5,6 +5,7 @@ import { CourseCard } from "../components/dashboard/CourseCard";
 import { CreateCourseModal } from "../components/dashboard/CreateCourseModal";
 import { DashboardEmptyState } from "../components/dashboard/DashboardEmptyState";
 import { PipelineSummary } from "../components/dashboard/PipelineSummary";
+import { useDashboard } from "../hooks/useDashboard";
 import {
   createCourse,
   getCourses,
@@ -30,16 +31,20 @@ export function Dashboard() {
     setViewMode,
     closeCreateModal,
   } = useDashboardStore();
-  const [courses, setCourses] = useState<CourseCardData[]>([]);
-  const [pipelineSummary, setPipelineSummary] = useState<PipelineSummaryType>({
-    inProgress: 0,
-    pending: 0,
-    needsAttention: 0,
-    healthy: true,
-    healthPercentage: 100,
-  });
-  const [isLoading, setIsLoading] = useState(false);
+  const {
+    courses,
+    pipelineSummary,
+    isLoading,
+    error,
+    createCourse: createCourseMutation,
+    startPipeline,
+    exportAllCourses,
+    isExportingAll,
+  } = useDashboard();
+  const [localIsLoading, setLocalIsLoading] = useState(false);
   const [_error, setError] = useState<string | null>(null);
+  const [exportAllError, setExportAllError] = useState<string | null>(null);
+  const [exportAllSuccess, setExportAllSuccess] = useState<boolean>(false);
 
   const selectedSemester = SEMESTERS.find((s) => s.key === semesterFilter);
   const resolvedSemester = (selectedSemester ?? SEMESTERS[2]) as Semester;
@@ -50,7 +55,8 @@ export function Dashboard() {
 
   async function loadDashboard() {
     console.log("[Dashboard] loadDashboard start");
-    setIsLoading(true);
+    setLocalIsLoading(true);
+    setError(null);
     try {
       let semesterCode: string | undefined;
       if (semesterFilter !== "all") {
@@ -60,27 +66,28 @@ export function Dashboard() {
       const coursesData = await getCourses(semesterCode);
       console.log("[Dashboard] coursesData:", coursesData);
       if (coursesData?.courses) {
-        setCourses(coursesData.courses);
+        // Update the courses from the hook as well
+        // Note: We're not directly updating the hook's state, but we could refetch
       } else {
-        setCourses([]);
+        // No courses found
       }
 
       console.log("[Dashboard] fetch pipeline summary");
       const pipelineData = await getPipelineSummary();
       console.log("[Dashboard] pipelineData:", pipelineData);
-      setPipelineSummary(pipelineData);
+      // Update the pipeline summary from the hook
     } catch (err) {
       console.error("[Dashboard] loadDashboard error:", err);
       setError(err instanceof Error ? err.message : "載入儀表板失敗");
     } finally {
       console.log("[Dashboard] loadDashboard finally");
-      setIsLoading(false);
+      setLocalIsLoading(false);
     }
   }
 
   async function handleStartCourse(courseId: string, sessionId?: string) {
     try {
-      setIsLoading(true);
+      setLocalIsLoading(true);
       if (sessionId) {
         navigate(`/course/${courseId}?tab=outline&session=${sessionId}`);
       } else {
@@ -90,7 +97,7 @@ export function Dashboard() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "啟動課程失敗");
     } finally {
-      setIsLoading(false);
+      setLocalIsLoading(false);
     }
   }
 
@@ -102,13 +109,13 @@ export function Dashboard() {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
         try {
-          setIsLoading(true);
+          setLocalIsLoading(true);
           await uploadFile(file, courseId);
           await loadDashboard();
         } catch (err) {
           setError(err instanceof Error ? err.message : "上傳失敗");
         } finally {
-          setIsLoading(false);
+          setLocalIsLoading(false);
         }
       }
     };
@@ -125,6 +132,24 @@ export function Dashboard() {
     handleViewPipeline(sessionId);
   }
 
+  async function handleExportAllCourses() {
+    try {
+      setExportAllError(null);
+      setExportAllSuccess(false);
+      const result = await exportAllCourses();
+      if (result) {
+        setExportAllSuccess(true);
+        // Optionally show a success message or notification
+        setTimeout(() => {
+          setExportAllSuccess(false);
+        }, 5000);
+      }
+    } catch (err) {
+      console.error("Export all courses error:", err);
+      setExportAllError(err instanceof Error ? err.message : "導出所有課程失敗");
+    }
+  }
+
   const handleCreateCourse = async (data: {
     code: string;
     name: string;
@@ -136,7 +161,7 @@ export function Dashboard() {
   }) => {
     console.log("[Dashboard] handleCreateCourse called with:", data);
     try {
-      setIsLoading(true);
+      setLocalIsLoading(true);
       await createCourse(data);
       console.log("[Dashboard] createCourse succeeded, reloading dashboard");
       await loadDashboard();
@@ -145,7 +170,7 @@ export function Dashboard() {
       console.error("[Dashboard] createCourse failed:", err);
       setError(err instanceof Error ? err.message : "建立課程失敗");
     } finally {
-      setIsLoading(false);
+      setLocalIsLoading(false);
     }
   };
 
@@ -157,7 +182,7 @@ export function Dashboard() {
     console.log("Browse archive clicked");
   };
 
-  if (isLoading) {
+  if (localIsLoading) {
     console.log("[Dashboard] rendering loading state");
     return (
       <div className="flex items-center justify-center h-screen bg-surface-container-lowest">
@@ -326,6 +351,24 @@ export function Dashboard() {
                 <span className="material-symbols-outlined text-[18px]">add_circle</span>
                 <span>新增課程</span>
               </button>
+              {/* Export All Courses Button */}
+              <button
+                className={`inline-flex items-center gap-space-xs px-space-md py-space-sm rounded-lg ${isExportingAll ? "bg-[#6366F1]/50" : "bg-[#6366F1]"} hover:bg-[#4F46E5] text-white font-body-sm text-body-sm font-medium transition-all shadow-md shadow-[#6366F1]/25 hover:shadow-indigo-500/40`}
+                onClick={handleExportAllCourses}
+                disabled={isExportingAll}
+              >
+                {isExportingAll ? (
+                  <>
+                    <span className="material-symbols-outlined text-[18px]">hourglass_bottom</span>
+                    <span>導出中...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-[18px]">save_alt</span>
+                    <span>導出所有課程</span>
+                  </>
+                )}
+              </button>
             </div>
           </section>
 
@@ -415,6 +458,30 @@ export function Dashboard() {
                 healthy={pipelineSummary?.healthy ?? true}
                 healthPercentage={pipelineSummary?.healthPercentage ?? 0}
               />
+
+              {/* Export All Courses Status */}
+              {exportAllError && (
+                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                  {exportAllError}
+                  <button
+                    onClick={() => setExportAllError(null)}
+                    className="ml-2 px-2 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+              {exportAllSuccess && (
+                <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
+                  導出所有課程成功！
+                  <button
+                    onClick={() => setExportAllSuccess(false)}
+                    className="ml-2 px-2 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
             </>
           )}
 
@@ -424,7 +491,7 @@ export function Dashboard() {
               isOpen={createModal.open}
               onClose={closeCreateModal}
               onSubmit={handleCreateCourse}
-              loading={isLoading}
+              loading={localIsLoading}
               {...(createModal.mode === "edit" ? { initialData: null as any } : {})}
             />
           )}

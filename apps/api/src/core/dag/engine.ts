@@ -1,3 +1,4 @@
+import type { IExecutionStateTracker } from "@plks/shared/contracts";
 import { DomainError } from "@plks/shared/errors";
 // apps/api/src/core/dag/engine.ts
 import type { Result } from "neverthrow";
@@ -24,8 +25,13 @@ export class DagEngine<T extends DagContext> {
   private readonly adjacency: Map<string, string[]>;
   private readonly reverseAdjacency: Map<string, string[]>;
   private readonly options: Required<DagEngineOptions>;
+  private readonly executionStateTracker: IExecutionStateTracker<T> | undefined;
 
-  constructor(nodes: DagNode<T>[], options: DagEngineOptions = {}) {
+  constructor(
+    nodes: DagNode<T>[],
+    options: DagEngineOptions = {},
+    executionStateTracker?: IExecutionStateTracker<T>,
+  ) {
     this.nodes = new Map(nodes.map((n) => [n.name, n]));
     this.adjacency = new Map();
     this.reverseAdjacency = new Map();
@@ -33,6 +39,7 @@ export class DagEngine<T extends DagContext> {
       maxRetries: options.maxRetries ?? 3,
       baseDelayMs: options.baseDelayMs ?? 1000,
     };
+    this.executionStateTracker = executionStateTracker;
 
     this.buildGraph(nodes);
     this.validateDag();
@@ -225,5 +232,12 @@ export class DagEngine<T extends DagContext> {
     }
 
     return levels;
+  }
+
+  /**
+   * Get the execution state tracker (if provided)
+   */
+  getExecutionStateTracker(): IExecutionStateTracker<T> | undefined {
+    return this.executionStateTracker;
   }
 }

@@ -240,20 +240,23 @@ export class SupabaseStructuredStore implements IStructuredStore {
     }
   }
 
-  async markConceptNodesExported(ids: string[], _b2Uris: Map<string, string>): Promise<void> {
+  async markConceptNodesExported(ids: string[], b2Uris: Map<string, string>): Promise<void> {
     try {
-      // We'll update the concept nodes to mark them as exported
-      // For simplicity, we'll update each node with its B2 URI
-      // In a real app, we might have an exported flag or a separate table.
-      // Since we don't have an exported flag in the schema, we'll skip this for now.
-      // We'll just update a placeholder or do nothing.
-      // TODO: Implement when we have an exported flag in the database.
-      // For now, we'll just log and return.
-      console.log(`Marking ${ids.length} concept nodes as exported`);
-      // We don't have a column for export status, so we cannot mark them.
-      // We'll assume that the export process will handle this separately.
-      // We'll just return without doing anything.
-      return;
+      // Update each concept node with its B2 URI and exported timestamp
+      for (const id of ids) {
+        const uri = b2Uris.get(id);
+        if (!uri) {
+          continue; // skip if no URI provided
+        }
+        const { error } = await this.supabase
+          .from("concept_nodes")
+          .update({
+            b2_markdown_uri: uri,
+            exported_at: new Date().toISOString(),
+          })
+          .eq("concept_id", id);
+        if (error) throw error;
+      }
     } catch (cause) {
       throw new DomainError(
         "CONCEPT_NODE_MARK_EXPORT_FAILED",
@@ -339,12 +342,21 @@ export class SupabaseStructuredStore implements IStructuredStore {
     }
   }
 
-  async markQuizItemsExported(_ids: string[], b2Uri: string): Promise<void> {
+  async markQuizItemsExported(ids: string[], b2Uri: string): Promise<void> {
     try {
-      // Similar to concept nodes, we don't have an exported flag in the quiz_items table.
-      // We'll just log and return.
-      console.log(`Marking quiz items as exported with B2 URI: ${b2Uri}`);
-      return;
+      // Update each quiz item with its B2 URI and exported timestamp
+      // Since all quiz items share the same JSON file, we use the same b2Uri for all
+      if (ids.length === 0) {
+        return;
+      }
+      const { error } = await this.supabase
+        .from("quiz_items")
+        .update({
+          b2_json_uri: b2Uri,
+          exported_at: new Date().toISOString(),
+        })
+        .in("quiz_id", ids);
+      if (error) throw error;
     } catch (cause) {
       throw new DomainError(
         "QUIZ_ITEM_MARK_EXPORT_FAILED",

@@ -7,6 +7,7 @@ import {
   getPipelineSummary,
   retryPipeline,
   startPipeline,
+  triggerExportAll,
   updateCourse,
   uploadFile,
 } from "../services/api";
@@ -100,6 +101,15 @@ export function useDashboard() {
     },
   });
 
+  // Export all courses mutation
+  const exportAllCoursesMutation = useMutation({
+    mutationFn: () => triggerExportAll(),
+    onSuccess: () => {
+      // Invalidate queries to refresh course data if needed
+      queryClient.invalidateQueries({ queryKey: ["courses"] });
+    },
+  });
+
   return {
     // Data
     courses: coursesResponse?.courses || [],
@@ -120,6 +130,7 @@ export function useDashboard() {
     uploadFile: uploadFileMutation.mutateAsync,
     startPipeline: startPipelineMutation.mutateAsync,
     retryPipeline: retryPipelineMutation.mutateAsync,
+    exportAllCourses: exportAllCoursesMutation.mutateAsync,
     // Mutation states
     isCreating: createCourseMutation.isPending,
     isUpdating: updateCourseMutation.isPending,
@@ -127,6 +138,7 @@ export function useDashboard() {
     isUploading: uploadFileMutation.isPending,
     isStartingPipeline: startPipelineMutation.isPending,
     isRetryingPipeline: retryPipelineMutation.isPending,
+    isExportingAll: exportAllCoursesMutation.isPending,
     // Refetch functions
     refetch: () => {
       coursesRefetch();

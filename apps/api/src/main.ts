@@ -27,11 +27,15 @@ const { B2StorageAdapter } = await import("./adapters/b2-storage.adapter.js");
 const { NvidiaNimAdapter } = await import("./adapters/nim-reasoning.adapter.js");
 const { ObsidianMarkdownWriter } = await import("./adapters/obsidian-markdown.writer.js");
 const { SupabaseStructuredStore } = await import("./adapters/supabase-structured-store.adapter.js");
+const { SupabaseExecutionStateTracker } = await import(
+  "./adapters/supabase-execution-state-tracker.adapter.js"
+);
 
 // Import DI registration
 const { registerAdapters } = await import("./config/di.js");
 
 // Import orchestrator components
+import type { PipelineContext } from "./modules/orchestrator/nodes.js";
 const { SessionStateStore } = await import("./modules/orchestrator/session-state.store.js");
 const { createPipelineNodes } = await import("./modules/orchestrator/nodes.js");
 const { DagEngine } = await import("./core/dag/engine.js");
@@ -62,6 +66,7 @@ const storageAdapter = new B2StorageAdapter();
 const aiReasoningGateway = new NvidiaNimAdapter();
 const knowledgeGraphWriter = new ObsidianMarkdownWriter(storageAdapter);
 const structuredStore = new SupabaseStructuredStore();
+const executionStateTracker = new SupabaseExecutionStateTracker<PipelineContext>();
 
 // Register adapters in DI container
 registerAdapters(storageAdapter, knowledgeGraphWriter, aiReasoningGateway, structuredStore);
@@ -82,10 +87,14 @@ const dagNodes: import("./core/dag/engine.js").DagNode<
   { name: "F", dependencies: ["E"], execute: pipelineNodes.F },
 ];
 
-const dagEngine = new DagEngine(dagNodes, {
-  maxRetries: 3,
-  baseDelayMs: 1000,
-});
+const dagEngine = new DagEngine(
+  dagNodes,
+  {
+    maxRetries: 3,
+    baseDelayMs: 1000,
+  },
+  executionStateTracker,
+);
 
 const orchestratorService = new OrchestratorService(sessionStore, pipelineNodes, dagEngine);
 

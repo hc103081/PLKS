@@ -1,3 +1,4 @@
+// apps/web/src/services/api.ts
 import type {
   GameSession,
   GameSessionState,
@@ -130,6 +131,12 @@ export interface ExportResult {
 
 export async function triggerExport(courseId: string): Promise<ExportTriggerResponse> {
   return fetchJson<ExportTriggerResponse>(`${API_PREFIX}/export/course/${courseId}`, {
+    method: "POST",
+  });
+}
+
+export async function triggerExportAll(): Promise<{ success: boolean; data: ExportResult[] }> {
+  return fetchJson<{ success: boolean; data: ExportResult[] }>(`${API_PREFIX}/export/all`, {
     method: "POST",
   });
 }

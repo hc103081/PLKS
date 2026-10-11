@@ -5,10 +5,12 @@ import type { IAIReasoningGateway } from "@plks/shared/contracts";
 import type { IKnowledgeGraphWriter } from "@plks/shared/contracts";
 import type { QuizItemPayload } from "@plks/shared/schemas";
 import type { ConceptNodePayload } from "@plks/shared/schemas";
+import { SidekickAIResponseSchema } from "@plks/shared/schemas";
 import type { Result } from "neverthrow";
 import { err, ok } from "neverthrow";
 import { DomainError } from "../../core/errors/domain-errors.js";
 import type {
+  ContextReference,
   GameSession,
   GameState,
   GamificationConfig,
@@ -185,13 +187,46 @@ export class SidekickStateMachine {
       return err(aiResult.error);
     }
 
-    const response = aiResult.value as SidekickResponse;
+    // Validate and transform AI response
+    const validationResult = SidekickAIResponseSchema.safeParse(aiResult.value);
+    if (!validationResult.success) {
+      return err(
+        DomainError.aiInferenceFailed(
+          new Error(`Invalid AI response: ${validationResult.error.message}`),
+        ),
+      );
+    }
+
+    const aiResponse = validationResult.data;
+
+    // Map AI response to SidekickResponse
+    const sidekickResponse: SidekickResponse = {
+      explanation: aiResponse.explanation,
+      keyConcept: aiResponse.keyPoints[0] ?? "",
+      actionableHint: aiResponse.visualReference,
+      encouragement: aiResponse.encouragement,
+      relatedSlideUris: slideUris,
+      contextReferences: [
+        {
+          type: "concept",
+          title: conceptNode.term,
+          content: conceptNode.explanation,
+          source: conceptNode.sourceEvidence.transcriptRef,
+        },
+        {
+          type: "slide",
+          title: `投影片 ${slideUris.length > 0 ? slideUris.length : 1}`,
+          content: aiResponse.visualReference,
+          source: conceptNode.sourceEvidence.slideUri,
+        },
+      ],
+    };
 
     // Transition back to PLAYING state
     session.state = "PLAYING";
     session.updatedAt = new Date();
 
-    return ok(response);
+    return ok(sidekickResponse);
   }
 
   /**
@@ -280,13 +315,13 @@ export class SidekickStateMachine {
         return m ? m[1] : undefined;
       };
       const conceptId = getYaml("conceptId");
-      const title = getYaml("title");
+      const term = getYaml("term");
       const transcriptRef = fmBlock.match(/transcriptRef:\s*"?([^"\n]+)"?/m)?.[1] ?? "";
       const slideUri = fmBlock.match(/slideUri:\s*"?([^"\n]+)"?/m)?.[1] ?? "";
-      if (!conceptId || !title) return null;
+      if (!conceptId || !term) return null;
 
       const body = md.slice(fmMatch[0].length);
-      const heading = body.match(/^#\s+(.+)$/m)?.[1] ?? title;
+      const heading = body.match(/^#\s+(.+)$/m)?.[1] ?? term;
       const explanation = body
         .replace(/^#\s+.*$/m, "")
         .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")

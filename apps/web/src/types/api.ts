@@ -49,6 +49,12 @@ export interface AiExtractionResult {
   quizItems: QuizItemPayload[];
 }
 
+export interface ExportResult {
+  conceptNodesExported: number;
+  quizItemsExported: number;
+  indexExported: boolean;
+}
+
 // API Request/Response types
 export interface StartSessionRequest {
   sessionId: string;

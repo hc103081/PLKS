@@ -25,6 +25,7 @@ function createMockStorage(): IStorageAdapter {
       files.set(path, chunks.join(""));
       return ok(`s3://test-bucket/${path}`);
     },
+
     async downloadFile(uri: string): Promise<Result<Readable, DomainError>> {
       const path = uri.replace("s3://test-bucket/", "");
       const content = files.get(path);
@@ -39,6 +40,7 @@ function createMockStorage(): IStorageAdapter {
       });
       return ok(stream);
     },
+
     async listDirectory(prefix: string): Promise<Result<string[], DomainError>> {
       const matches: string[] = [];
       for (const [path] of files) {
@@ -48,6 +50,7 @@ function createMockStorage(): IStorageAdapter {
       }
       return ok(matches);
     },
+
     async generatePresignedUrl(
       uri: string,
       _expirySeconds: number,
@@ -68,9 +71,13 @@ function createMockAI(): IAIReasoningGateway {
       _imageUrls: string[],
     ): Promise<Result<any, DomainError>> {
       return ok({
-        hint: "Think about the definition of opportunity cost",
         explanation: "Opportunity cost is the value of the next best alternative foregone.",
-        socraticQuestion: "What would you give up to choose this option?",
+        keyPoints: [
+          "It represents the benefits missed when choosing one alternative over another.",
+          "It helps in making better decisions by considering what is sacrificed.",
+        ],
+        visualReference: "Look at slide 5 which shows the opportunity cost calculation example.",
+        encouragement: "You're doing great! Keep learning and applying these concepts.",
       });
     },
   };
@@ -220,8 +227,13 @@ describe("SidekickStateMachine", () => {
       const result = await stateMachine.requestSidekickHelp("session-1");
       expect(result.isOk()).toBe(true);
       if (result.isOk()) {
-        expect(result.value.hint).toBeDefined();
+        expect(result.value.keyConcept).toBeDefined();
         expect(result.value.explanation).toBeDefined();
+        expect(result.value.actionableHint).toBeDefined();
+        expect(result.value.encouragement).toBeDefined();
+        expect(Array.isArray(result.value.relatedSlideUris)).toBe(true);
+        expect(Array.isArray(result.value.contextReferences)).toBe(true);
+        expect(result.value.contextReferences.length).toBeGreaterThan(0);
       }
       const session = stateMachine.getSession("session-1");
       expect(session?.state).toBe("PLAYING");
@@ -308,7 +320,6 @@ describe("GamificationService", () => {
       const result = await service.startGame("non-existent-course");
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
-        // loadQuizItems returns NOT_FOUND for missing files (not caught by try-catch)
         expect(result.error.code).toBe("NOT_FOUND");
       }
     });
@@ -396,8 +407,13 @@ describe("GamificationService", () => {
       const result = await service.requestHelp(sessionId);
       expect(result.isOk()).toBe(true);
       if (result.isOk()) {
-        expect(result.value.hint).toBeDefined();
+        expect(result.value.keyConcept).toBeDefined();
         expect(result.value.explanation).toBeDefined();
+        expect(result.value.actionableHint).toBeDefined();
+        expect(result.value.encouragement).toBeDefined();
+        expect(Array.isArray(result.value.relatedSlideUris)).toBe(true);
+        expect(Array.isArray(result.value.contextReferences)).toBe(true);
+        expect(result.value.contextReferences.length).toBeGreaterThan(0);
       }
     });
 

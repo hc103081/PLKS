@@ -11,7 +11,7 @@ import { injectable } from "tsyringe";
 export class ObsidianMarkdownWriter implements IKnowledgeGraphWriter {
   constructor(private readonly storage: IStorageAdapter) {}
 
-  async writeNode(node: ConceptNodePayload): Promise<Result<boolean, DomainError>> {
+  async writeNode(node: ConceptNodePayload): Promise<Result<string, DomainError>> {
     try {
       // Copy referenced slide asset to _assets/ directory
       const assetCopyResult = await this.copyAssetToAssetsDir(
@@ -27,13 +27,13 @@ export class ObsidianMarkdownWriter implements IKnowledgeGraphWriter {
       const path = this.getNodePath(node.courseId, node.conceptId);
 
       const stream = this.stringToStream(markdown);
-      const result = await this.storage.uploadFile(path, stream);
+      const uploadResult = await this.storage.uploadFile(path, stream);
 
-      if (result.isErr()) {
-        return err(DomainError.markdownWriteFailed(result.error));
+      if (uploadResult.isErr()) {
+        return err(DomainError.markdownWriteFailed(uploadResult.error));
       }
 
-      return ok(true);
+      return ok(uploadResult.value);
     } catch (cause) {
       return err(DomainError.markdownWriteFailed(cause));
     }
@@ -45,19 +45,19 @@ export class ObsidianMarkdownWriter implements IKnowledgeGraphWriter {
   async writeQuiz(
     courseId: string,
     quizItems: QuizItemPayload[],
-  ): Promise<Result<boolean, DomainError>> {
+  ): Promise<Result<string, DomainError>> {
     try {
       const path = this.getQuizPath(courseId);
       const json = JSON.stringify(quizItems, null, 2);
       const stream = this.stringToStream(json);
 
-      const result = await this.storage.uploadFile(path, stream);
+      const uploadResult = await this.storage.uploadFile(path, stream);
 
-      if (result.isErr()) {
-        return err(DomainError.markdownWriteFailed(result.error));
+      if (uploadResult.isErr()) {
+        return err(DomainError.markdownWriteFailed(uploadResult.error));
       }
 
-      return ok(true);
+      return ok(uploadResult.value);
     } catch (cause) {
       return err(DomainError.markdownWriteFailed(cause));
     }
@@ -66,19 +66,19 @@ export class ObsidianMarkdownWriter implements IKnowledgeGraphWriter {
   async writeIndex(
     courseId: string,
     nodes: ConceptNodePayload[],
-  ): Promise<Result<boolean, DomainError>> {
+  ): Promise<Result<string, DomainError>> {
     try {
       const markdown = this.generateIndexMarkdown(courseId, nodes);
       const path = this.getIndexPath(courseId);
 
       const stream = this.stringToStream(markdown);
-      const result = await this.storage.uploadFile(path, stream);
+      const uploadResult = await this.storage.uploadFile(path, stream);
 
-      if (result.isErr()) {
-        return err(DomainError.markdownWriteFailed(result.error));
+      if (uploadResult.isErr()) {
+        return err(DomainError.markdownWriteFailed(uploadResult.error));
       }
 
-      return ok(true);
+      return ok(uploadResult.value);
     } catch (cause) {
       return err(DomainError.markdownWriteFailed(cause));
     }

@@ -299,6 +299,14 @@ async function exportCourse(courseId: string, supabase: SupabaseClient): Promise
     }
 
     // 4. Export concept nodes
+    const conceptNodeUpdates: {
+      id: string;
+      b2_markdown_uri: string;
+      exported_at: string;
+      concept_id: string;
+    }[] = [];
+    const conceptNodeErrors: Array<{ concept_id: string; error: string }> = [];
+
     for (const node of conceptNodes || []) {
       try {
         const markdown = writeConceptNodeMarkdown(node);
@@ -307,18 +315,13 @@ async function exportCourse(courseId: string, supabase: SupabaseClient): Promise
 
         const uri = await uploadToB2(key, markdown, "text/markdown");
 
-        // Update concept node with export info
-        const { error: updateError } = await supabase
-          .from("concept_nodes")
-          .update({
-            b2_markdown_uri: uri,
-            exported_at: new Date().toISOString(),
-          })
-          .eq("id", node.id);
-
-        if (updateError) {
-          throw new Error(`Failed to update concept node: ${updateError.message}`);
-        }
+        // Collect update for batch processing
+        conceptNodeUpdates.push({
+          id: node.id,
+          b2_markdown_uri: uri,
+          exported_at: new Date().toISOString(),
+          concept_id: node.concept_id,
+        });
 
         // Resolve any previous error
         await resolveExportError(supabase, "concept_node", node.concept_id);
@@ -327,15 +330,55 @@ async function exportCourse(courseId: string, supabase: SupabaseClient): Promise
       } catch (err) {
         const errorMsg = `Failed to export concept node ${node.concept_id}: ${err instanceof Error ? err.message : String(err)}`;
         result.errors.push(errorMsg);
-        await logExportError(
-          supabase,
-          courseId,
-          "concept_node",
-          node.concept_id,
-          "EXPORT_FAILED",
-          errorMsg,
-        );
+        conceptNodeErrors.push({
+          concept_id: node.concept_id,
+          error: errorMsg,
+        });
       }
+    }
+
+    // Batch update concept nodes
+    if (conceptNodeUpdates.length > 0) {
+      const updatesForSupabase = conceptNodeUpdates.map(({ id, b2_markdown_uri, exported_at }) => ({
+        id,
+        b2_markdown_uri,
+        exported_at,
+      }));
+
+      const { error: batchUpdateError } = await supabase
+        .from("concept_nodes")
+        .upsert(updatesForSupabase, {
+          onConflict: "id",
+          ignoreDuplicates: false,
+        });
+
+      if (batchUpdateError) {
+        // If batch update fails, log errors for all concept nodes
+        for (const update of conceptNodeUpdates) {
+          const errorMsg = `Failed to update concept node: ${batchUpdateError.message}`;
+          result.errors.push(errorMsg);
+          await logExportError(
+            supabase,
+            courseId,
+            "concept_node",
+            update.concept_id,
+            "EXPORT_FAILED",
+            errorMsg,
+          );
+        }
+      }
+    }
+
+    // Log individual concept node errors
+    for (const error of conceptNodeErrors) {
+      await logExportError(
+        supabase,
+        courseId,
+        "concept_node",
+        error.concept_id,
+        "EXPORT_FAILED",
+        error.error,
+      );
     }
 
     // 5. Export quiz items
@@ -347,18 +390,23 @@ async function exportCourse(courseId: string, supabase: SupabaseClient): Promise
 
         const uri = await uploadToB2(key, jsonContent, "application/json");
 
-        // Update all quiz items with export info
-        const quizIds = quizItems.map((q) => q.id);
-        const { error: updateError } = await supabase
-          .from("quiz_items")
-          .update({
-            b2_json_uri: uri,
-            exported_at: new Date().toISOString(),
-          })
-          .in("id", quizIds);
+        // Collect quiz items for batch update
+        const quizItemsForUpdate = quizItems.map((item) => ({
+          id: item.id,
+          b2_json_uri: uri,
+          exported_at: new Date().toISOString(),
+        }));
 
-        if (updateError) {
-          throw new Error(`Failed to update quiz items: ${updateError.message}`);
+        // Batch update quiz items
+        const { error: quizUpdateError } = await supabase
+          .from("quiz_items")
+          .upsert(quizItemsForUpdate, {
+            onConflict: "id",
+            ignoreDuplicates: false,
+          });
+
+        if (quizUpdateError) {
+          throw new Error(`Failed to update quiz items: ${quizUpdateError.message}`);
         }
 
         // Resolve errors for all quiz items
@@ -394,6 +442,11 @@ async function exportCourse(courseId: string, supabase: SupabaseClient): Promise
 
         // Update course with index URI (optional: add index_uri column to courses table)
         // For now, we just log success
+        // Using upsert for consistency with other batch operations
+        await supabase
+          .from("courses")
+          .update({ updated_at: new Date().toISOString() })
+          .eq("id", courseId);
 
         await resolveExportError(supabase, "course_index", courseId);
 

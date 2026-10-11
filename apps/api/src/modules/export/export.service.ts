@@ -1,3 +1,4 @@
+import { Readable } from "node:stream";
 import type { IStorageAdapter } from "@plks/shared/contracts";
 import type { IStructuredStore } from "@plks/shared/contracts";
 import type { IKnowledgeGraphWriter } from "@plks/shared/contracts";
@@ -28,19 +29,30 @@ export class ExportService {
    */
   async exportCourse(courseId: string): Promise<Result<ExportResult, DomainError>> {
     try {
-      // 1. Get concept nodes from Supabase
+      // 1. Get course info to determine export directory
+      const course = await this.structuredStore.getCourseById(courseId);
+      if (!course) {
+        return err(DomainError.notFound("Course", courseId));
+      }
+      const exportDir = course.b2_export_dir;
+      if (!exportDir) {
+        return err(DomainError.failedPrecondition("Course missing B2 export directory"));
+      }
+
+      // 2. Get concept nodes from Supabase
       const conceptNodes = await this.structuredStore.getConceptNodesByCourse(courseId);
 
-      // 2. Get quiz items from Supabase
+      // 3. Get quiz items from Supabase
       const quizItems = await this.structuredStore.getQuizItemsByCourse(courseId);
 
       if (conceptNodes.length === 0 && quizItems.length === 0) {
         return err(DomainError.notFound("CourseData", courseId));
       }
 
-      // 3. Write each concept node to B2
+      // 4. Upload each concept node to B2
       let exportedNodes = 0;
       const conceptNodePayloads: ConceptNodePayload[] = [];
+      const conceptNodeUris = new Map<string, string>();
 
       for (const node of conceptNodes) {
         const payload: ConceptNodePayload = {
@@ -55,24 +67,49 @@ export class ExportService {
           },
         };
 
-        const writeResult = await this.graphWriter.writeNode(payload);
-        if (writeResult.isOk()) {
-          exportedNodes++;
-          conceptNodePayloads.push(payload);
+        const writeNodeResult = await this.graphWriter.writeNode(payload);
+        if (writeNodeResult.isErr()) {
+          return err(writeNodeResult.error);
         }
+        const markdownContent = writeNodeResult.value;
+        const filePath = `${exportDir}/nodes/${node.conceptId}.md`;
+        const uploadResult = await this.storage.uploadFile(
+          filePath,
+          Readable.from(markdownContent),
+        );
+        if (uploadResult.isErr()) {
+          return err(uploadResult.error);
+        }
+
+        exportedNodes++;
+        conceptNodePayloads.push(payload);
+        conceptNodeUris.set(node.conceptId, uploadResult.value);
       }
 
-      // 4. Write index (MOC)
+      // 5. Upload index (MOC)
       let indexExported = false;
+      let indexUri: string | undefined;
       if (conceptNodePayloads.length > 0) {
-        const indexResult = await this.graphWriter.writeIndex(courseId, conceptNodePayloads);
-        if (indexResult.isOk()) {
-          indexExported = true;
+        const writeIndexResult = await this.graphWriter.writeIndex(courseId, conceptNodePayloads);
+        if (writeIndexResult.isErr()) {
+          return err(writeIndexResult.error);
         }
+        const indexContent = writeIndexResult.value;
+        const indexFilePath = `${exportDir}/${courseId}-index.md`;
+        const indexUploadResult = await this.storage.uploadFile(
+          indexFilePath,
+          Readable.from(indexContent),
+        );
+        if (indexUploadResult.isErr()) {
+          return err(indexUploadResult.error);
+        }
+        indexExported = true;
+        indexUri = indexUploadResult.value;
       }
 
-      // 5. Write quiz items
+      // 6. Upload quiz items
       let exportedQuizItems = 0;
+      let quizUri: string | undefined;
       if (quizItems.length > 0) {
         const quizPayloads: QuizItemPayload[] = quizItems.map((q) => ({
           quizId: q.quizId,
@@ -84,25 +121,32 @@ export class ExportService {
           contextReference: q.contextReference,
         }));
 
-        const quizResult = await this.graphWriter.writeQuiz(courseId, quizPayloads);
-        if (quizResult.isOk()) {
-          exportedQuizItems = quizPayloads.length;
+        const writeQuizResult = await this.graphWriter.writeQuiz(courseId, quizPayloads);
+        if (writeQuizResult.isErr()) {
+          return err(writeQuizResult.error);
         }
+        const quizJsonContent = writeQuizResult.value;
+        const quizFilePath = `${exportDir}/${courseId}-quiz.json`;
+        const quizUploadResult = await this.storage.uploadFile(
+          quizFilePath,
+          Readable.from(quizJsonContent),
+        );
+        if (quizUploadResult.isErr()) {
+          return err(quizUploadResult.error);
+        }
+
+        exportedQuizItems = quizPayloads.length;
+        quizUri = quizUploadResult.value;
       }
 
-      // 6. Mark as exported in Supabase
+      // 7. Mark as exported in Supabase
       const conceptNodeIds = conceptNodes.map((n) => n.conceptId);
       if (conceptNodeIds.length > 0) {
-        const exportedUris = new Map<string, string>();
-        for (const node of conceptNodes) {
-          exportedUris.set(node.conceptId, `vault/${courseId}/concepts/${node.conceptId}.md`);
-        }
-        await this.structuredStore.markConceptNodesExported(conceptNodeIds, exportedUris);
+        await this.structuredStore.markConceptNodesExported(conceptNodeIds, conceptNodeUris);
       }
 
       const quizIds = quizItems.map((q) => q.quizId);
-      if (quizIds.length > 0) {
-        const quizUri = `vault/${courseId}/_quiz/${courseId}.json`;
+      if (quizIds.length > 0 && quizUri !== undefined) {
         await this.structuredStore.markQuizItemsExported(quizIds, quizUri);
       }
 

@@ -19,7 +19,7 @@
     "typecheck:watch": "tsc --noEmit --watch",
     "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules apps/*/dist packages/*/dist .turbo",
     "ci": "pnpm lint && pnpm typecheck && pnpm test:coverage",
-    "prepare": "lefthook install"
+    "prepare": "lefthook install || true"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.0",

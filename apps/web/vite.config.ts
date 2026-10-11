@@ -7,10 +7,10 @@ import { defineConfig } from "vite";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..", "..");
 
-console.log('__dirname:', __dirname);
-console.log('root:', root);
-console.log('VITE_API_BASE_URL (before load):', process.env['VITE_API_BASE_URL']);
-console.log('VITE_TEST (before load):', process.env['VITE_TEST']);
+console.log("__dirname:", __dirname);
+console.log("root:", root);
+console.log("VITE_API_BASE_URL (before load):", process.env["VITE_API_BASE_URL"]);
+console.log("VITE_TEST (before load):", process.env["VITE_TEST"]);
 
 export default defineConfig({
   plugins: [react()],

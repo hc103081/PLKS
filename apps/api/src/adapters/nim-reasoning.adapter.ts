@@ -28,14 +28,14 @@ export class NvidiaNimAdapter implements IAIReasoningGateway {
   private readonly model: string;
   private readonly maxRetries = 3;
   private readonly baseDelayMs = 1000;
-
-  private knowledgeExtractionPrompt: string | null = null;
-  private sidekickHelpPrompt: string | null = null;
+  private readonly promptsDir: string;
+  private readonly promptCache: Map<string, string> = new Map();
 
   constructor() {
     this.apiKey = process.env["NVIDIA_API_KEY"] ?? "";
     this.baseUrl = process.env["NVIDIA_BASE_URL"] ?? "https://integrate.api.nvidia.com/v1";
     this.model = process.env["NVIDIA_MODEL"] ?? "nvidia/nemotron-3-ultra";
+    this.promptsDir = join(__dirname, "config", "prompts");
 
     if (!this.apiKey) {
       throw new Error("NVIDIA_API_KEY not configured");
@@ -47,11 +47,21 @@ export class NvidiaNimAdapter implements IAIReasoningGateway {
     textPayload: string,
     imageUrls: string[],
   ): Promise<Result<unknown, DomainError>> {
-    // Load system prompts if not cached
-    await this.ensurePromptsLoaded();
+    // Load the prompt for the given systemPrompt key if not cached
+    let prompt = this.promptCache.get(systemPrompt);
+    if (prompt === undefined) {
+      try {
+        prompt = await readFile(join(this.promptsDir, `${systemPrompt}.txt`), "utf-8");
+        this.promptCache.set(systemPrompt, prompt);
+      } catch (cause) {
+        throw new Error(
+          `Failed to load prompt file for key "${systemPrompt}": ${cause instanceof Error ? cause.message : String(cause)}`,
+        );
+      }
+    }
 
-    // Build the complete prompt with JSON schema instruction
-    const fullPrompt = this.buildPrompt(systemPrompt, textPayload, imageUrls);
+    // Build the complete prompt with JSON schema instruction (already in the prompt file)
+    const fullPrompt = this.buildPrompt(prompt, textPayload, imageUrls);
 
     let lastError: Error | null = null;
 
@@ -93,46 +103,14 @@ export class NvidiaNimAdapter implements IAIReasoningGateway {
   }
 
   /**
-   * Load system prompts from config files
-   */
-  private async ensurePromptsLoaded(): Promise<void> {
-    if (this.knowledgeExtractionPrompt && this.sidekickHelpPrompt) {
-      return;
-    }
-
-    const promptsDir = join(__dirname, "config", "prompts");
-
-    try {
-      this.knowledgeExtractionPrompt ??= await readFile(
-        join(promptsDir, "knowledge-extraction.txt"),
-        "utf-8",
-      );
-      this.sidekickHelpPrompt ??= await readFile(join(promptsDir, "sidekick-help.txt"), "utf-8");
-    } catch (cause) {
-      throw new Error(
-        `Failed to load system prompts: ${cause instanceof Error ? cause.message : String(cause)}`,
-      );
-    }
-  }
-
-  /**
    * Build the complete prompt for NIM
-   * The systemPrompt parameter determines which base prompt to use
+   * The prompt parameter is the loaded prompt file content (which includes JSON schema instruction)
    */
-  private buildPrompt(systemPrompt: string, textPayload: string, imageUrls: string[]): string {
-    // Determine which base prompt to use based on the systemPrompt identifier
-    const basePrompt =
-      systemPrompt === "sidekick" ? this.sidekickHelpPrompt : this.knowledgeExtractionPrompt;
-
-    if (!basePrompt) {
-      throw new Error("System prompt not loaded");
-    }
-
-    // Append JSON schema instruction (already embedded in prompt files)
+  private buildPrompt(prompt: string, textPayload: string, imageUrls: string[]): string {
     // Build user message with text payload and image references
     const imageRefs = imageUrls.map((url, idx) => `[Image ${idx + 1}: ${url}]`).join("\n");
 
-    return `${basePrompt}\n\n---\n\n輸入資料：\n${textPayload}\n\n${imageRefs ? `參考圖片：\n${imageRefs}` : ""}`;
+    return `${prompt}\n\n---\n\n輸入資料：\n${textPayload}\n\n${imageRefs ? `參考圖片：\n${imageRefs}` : ""}`;
   }
 
   /**
