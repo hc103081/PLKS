@@ -1,17 +1,25 @@
-# Railway 部署配置
+# Railway 部署配置 - 使用 Nixpacks
+# 關鍵：nixpacks 會自動偵測 Node.js 專案，但 monorepo 需要明確指定
+
 [build]
+# 使用 nixpacks builder
 builder = "nixpacks"
-# 在 monorepo 根目錄安裝依賴，再建置 api
-buildCommand = "corepack enable && pnpm install --frozen-lockfile && pnpm --filter api run build"
+
+# 在 monorepo 根目錄安裝所有依賴，再建置 api
+# 使用 corepack 啟用 pnpm，安裝依賴，然後只建置 @plks/api
+buildCommand = "corepack enable && pnpm install --frozen-lockfile && pnpm --filter @plks/api run build"
 
 [deploy]
+# 啟動指令：從 apps/api 目錄運行編譯後的 main.js
 startCommand = "cd apps/api && node dist/main.js"
+
+# 重啟策略：失敗時重啟，最多 10 次
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 10
 
-# 健康檢查
+# 健康檢查端點
 healthcheckPath = "/health"
 healthcheckTimeout = 100
 
-# 環境變數會在 Railway Dashboard 設定
-# 不要在這裡硬編碼 secret
+# 注意：環境變數請在 Railway Dashboard → Variables 中設定
+# 包含：B2_*, NVIDIA_*, SUPABASE_*, NODE_ENV=production, PORT=3000, LOG_LEVEL=info, API_PREFIX=/api
