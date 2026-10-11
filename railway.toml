@@ -1,0 +1,13 @@
+# Railway 部署配置
+[build]
+builder = "nixpacks"
+buildCommand = "cd apps/api && npm ci && npm run build"
+
+[deploy]
+startCommand = "cd apps/api && node dist/main.js"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
+
+# 健康檢查
+healthcheckPath = "/health"
+healthcheckTimeout = 100

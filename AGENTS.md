@@ -18,7 +18,7 @@
 | **課程結構** | 大學 8 學期分區 (1上、1下、2上、2下、3上、3下、4上、4下)，用戶可於當學期新增課程 |
 | **使用者模式** | 單一使用者 (無多租戶複雜度) |
 | **認證方式** | Supabase Auth (Email Magic Link) |
-| **部署目標** | Vercel (Hobby) + Supabase (免費額度) + Backblaze B2 (免費額度) |
+| **部署目標** | **前端**: Vercel (Hobby) + **API**: Railway (免費額度) + **資料庫**: Supabase (免費額度) + **物件儲存**: Backblaze B2 (免費額度) |
 
 ### 核心原則
 - **依賴反轉**：業務邏輯只依賴介面 (`IStorageAdapter`、`IStructuredStore`、`IKnowledgeGraphWriter`、`IAIReasoningGateway`)，不依賴具體實作
@@ -58,7 +58,8 @@
 | **Backblaze B2** | `@aws-sdk/client-s3` + `@aws-sdk/s3-request-presigner` | 物件儲存、Presigned URL |
 | **Supabase** | `@supabase/supabase-js` | PostgreSQL、Auth、Realtime、Edge Functions、pg_cron |
 | **NVIDIA NIM** | `fetch` + 自訂 Adapter | 多模態推理 (Nemotron-3-Ultra) |
-| **部署** | Vercel (Hobby) + Supabase + B2 | Serverless 前端/API、資料庫、大檔儲存 |
+| **前端部署** | Vercel (Hobby) | 靜態站點 + SPA 路由 |
+| **API 部署** | Railway (免費額度) | Fastify Node.js 長期運行、背景工作、WebSocket |
 
 ### 開發工具鏈
 - **Monorepo**: `pnpm workspace` + `turbo` (可選)
@@ -638,3 +639,79 @@ alias plks-db-types='pnpm supabase:types'
 ---
 
 *本文件根據 `specs/specs1.md` 與 `specs/specs2.md` 藍圖生成，若藍圖更新請同步修改此文件。*
+
+---
+
+## 12. 部署狀態與里程碑 (Deployment Status)
+
+### 當前架構 (2025-10-11)
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         PLKS 部署架構                                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   ┌─────────────┐         ┌─────────────┐         ┌─────────────┐          │
+│   │   前端       │  HTTPS  │   API        │         │   資料庫      │          │
+│   │  Vercel     │◄───────►│  Railway    │◄───────►│  Supabase   │          │
+│   │  plks.      │  REST   │  plks-api.  │  PostgREST│  PostgreSQL │          │
+│   │  vercel.app │  API    │  railway.app│         │  + Realtime │          │
+│   └─────────────┘         └─────────────┘         └─────────────┘          │
+│        │                          │                      │                  │
+│        │                          │                      ▼                  │
+│        │                          │               ┌─────────────┐          │
+│        │                          └──────────────►│  B2 Storage │          │
+│        │                          Presigned URL   │  Backblaze  │          │
+│        │                                        └─────────────┘          │
+│        ▼                                                                     │
+│   ┌─────────────┐                                                            │
+│   │  Google     │                                                            │
+│   │  OAuth      │                                                            │
+│   └─────────────┘                                                            │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### ✅ 已完成功能
+
+| 階段 | 功能 | 狀態 | 備註 |
+|------|------|------|------|
+| **Phase 1** | Domain & Interfaces | ✅ 完成 | Contracts, Schemas, Entities, DI 容器 |
+| **Phase 2** | Infrastructure Adapters | ✅ 完成 | B2, Supabase, NIM, Markdown Writer |
+| **Phase 3** | Core Orchestrator | ✅ 完成 | DAG Engine, Ingestion Pipeline, 6 節點 |
+| **Phase 4** | Gamification API & Frontend | ✅ 完成 | Sidekick 狀態機, Quiz, Dashboard, Login |
+| **Phase 5** | B2 Export Pipeline | ✅ 完成 | Edge Function, pg_cron, 手動觸發 |
+| **Auth** | Google OAuth + Magic Link | ✅ 完成 | Supabase Provider, Vercel 部署修正 |
+| **前端部署** | Vercel SPA | ✅ 完成 | vercel.json rewrites, 環境變數注入 |
+
+### 🔧 當前部署配置
+
+| 服務 | URL | 環境變數關鍵值 |
+|------|-----|----------------|
+| **前端** | `https://plks.vercel.app` | `VITE_API_BASE_URL=https://plks-api.railway.app` |
+| **API** | `https://plks-api.railway.app` | `PORT=3000`, `NODE_ENV=production` |
+| **資料庫** | `https://jpoxxdsixayicxycabwc.supabase.co` | `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL` |
+| **物件儲存** | `s3.us-west-004.backblazeb2.com` | `B2_APPLICATION_KEY_ID`, `B2_APPLICATION_KEY` |
+| **AI 推理** | `https://integrate.api.nvidia.com/v1` | `NVIDIA_API_KEY` |
+
+### 📋 待完成事項
+
+| 優先級 | 項目 | 說明 |
+|--------|------|------|
+| **高** | Railway API 部署驗證 | 需在 Railway 連接 GitHub、設定環境變數、驗證健康檢查 |
+| **高** | 前端 VITE_API_BASE_URL 更新 | Railway 部署成功後，更新 Vercel 環境變數 |
+| **中** | E2E 測試完整流程 | 音檔上傳 → AI 分析 → Supabase → B2 導出 → Obsidian 同步 |
+| **中** | 錯誤監控與告警 | Sentry 或 Railway 內建 logs |
+| **低** | CI/CD 自動化 | GitHub Actions 或 Railway 原生部署觸發 |
+
+### 🚀 Railway 部署步驟 (待執行)
+
+1. **連接 GitHub 專案** 到 Railway
+2. **Root Directory** 設為 `apps/api`
+3. **環境變數** 同 Vercel 後端變數（見上表）
+4. **部署** 並取得 URL (如 `https://plks-api.railway.app`)
+5. **更新 Vercel** `VITE_API_BASE_URL` 為 Railway URL
+6. **驗證** `/health` 端點與 `/api/courses` 回應 JSON
+
+---
+
+*最後更新：2025-10-11*

@@ -139,18 +139,19 @@ const app = Fastify({
   logger: loggerConfig,
 });
 
-// CORS: allow web dev server at 5173 to hit API on 3000
-if (env.NODE_ENV !== "production") {
+// CORS configuration
+  const corsOrigins = env.NODE_ENV === "production" 
+    ? ["https://plks.vercel.app", "https://plks.vercel.app/"] 
+    : (origin: string | undefined, cb: (err: Error | null, allowed: boolean) => void) => {
+        const ok = !origin || origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:");
+        cb(null, ok);
+      };
+
   const fpCors = await import("@fastify/cors");
   await app.register(fpCors.default, {
-    origin: (origin, cb) => {
-      const ok =
-        !origin || origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:");
-      cb(null, ok);
-    },
+    origin: corsOrigins,
     credentials: true,
   });
-}
 
 // Register multipart plugin for file uploads
 await app.register(multipart, {
