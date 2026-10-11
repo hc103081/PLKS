@@ -39,7 +39,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background font-body-md text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container">
+    <div className="min-h-screen bg-background font-body-md text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container flex flex-col items-center justify-center">
       {/* Cybernetic Academic Ambient Background Elements */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden -z-10 flex items-center justify-center">
         <div className="absolute w-[800px] h-[800px] rounded-full bg-gradient-to-tr from-primary-container/10 via-tertiary-container/5 to-transparent blur-3xl opacity-40" />
@@ -98,7 +98,7 @@ export function LoginPage() {
         </div>
       </aside>
       {/* Central Authentication Card (Level 2 Elevation) */}
-      <main className="w-full max-w-xl bg-surface-container-low rounded-xl shadow-2xl p-6 sm:p-10 relative overflow-hidden backdrop-blur-xl">
+      <main className="max-w-xl bg-surface-container-low rounded-xl shadow-2xl p-6 sm:p-10 relative overflow-hidden backdrop-blur-xl">
         {/* Subtle Top Edge Ambient Accent Glow */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-secondary-container via-primary-container to-tertiary-container" />
         {/* Brand Header */}
