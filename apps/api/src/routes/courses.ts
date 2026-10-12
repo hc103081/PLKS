@@ -58,7 +58,7 @@ function createGetCoursesHandler(structuredStore: IStructuredStore): RouteHandle
           healthPercentage: 100,
         },
       });
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof DomainError) {
         return reply.status(400).send({ error: err.message });
       }
@@ -115,7 +115,7 @@ function createCreateCourseHandler(structuredStore: IStructuredStore): RouteHand
       });
       console.log("[courses.ts] createCourse success:", course);
       return reply.status(201).send(course);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("[courses.ts] createCourse error:", err);
       if (err instanceof DomainError) {
         // 提取 DomainError 的 cause 並嘗試解析 JSON
@@ -170,7 +170,7 @@ function createGetCourseByIdHandler(structuredStore: IStructuredStore): RouteHan
         return reply.status(404).send({ error: "Course not found" });
       }
       return reply.send(course);
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof DomainError) {
         return reply.status(400).send({ error: err.message });
       }
@@ -212,7 +212,7 @@ function createUpdateCourseHandler(structuredStore: IStructuredStore): RouteHand
 
       const course = await structuredStore.updateCourse(parseResult.data.id, filteredData);
       return reply.send(course);
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof DomainError) {
         return reply.status(400).send({ error: err.message });
       }
@@ -231,7 +231,7 @@ function createDeleteCourseHandler(structuredStore: IStructuredStore): RouteHand
 
       await structuredStore.deleteCourse(parseResult.data.id);
       return reply.status(204).send();
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof DomainError) {
         return reply.status(400).send({ error: err.message });
       }
@@ -252,7 +252,7 @@ function createGetConceptNodesByCourseHandler(
 
       const conceptNodes = await structuredStore.getConceptNodesByCourse(parseResult.data.id);
       return reply.send(conceptNodes);
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof DomainError) {
         return reply.status(400).send({ error: err.message });
       }
@@ -271,7 +271,7 @@ function createGetQuizItemsByCourseHandler(structuredStore: IStructuredStore): R
 
       const quizItems = await structuredStore.getQuizItemsByCourse(parseResult.data.id);
       return reply.send(quizItems);
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof DomainError) {
         return reply.status(400).send({ error: err.message });
       }
