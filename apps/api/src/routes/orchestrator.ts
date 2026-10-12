@@ -2,6 +2,7 @@ import type { IStructuredStore } from "@plks/shared/contracts";
 // apps/api/src/routes/orchestrator.ts
 import type { FastifyInstance, RouteHandlerMethod } from "fastify";
 import { z } from "zod";
+import type { AuthenticatedRequest } from "../middleware/auth.js";
 import type { OrchestratorService } from "../modules/orchestrator/orchestrator.service.js";
 
 const StartSessionBodySchema = z.object({
@@ -71,9 +72,12 @@ function createRetrySessionHandler(orchestrator: OrchestratorService): RouteHand
 }
 
 function createGetPipelineSummaryHandler(structuredStore: IStructuredStore): RouteHandlerMethod {
-  return async (_request, reply) => {
+  return async (request: AuthenticatedRequest, reply) => {
     try {
-      const userId = process.env["PLKS_DEV_USER_ID"] ?? "00000000-0000-0000-0000-000000000000";
+      const userId =
+        request.user?.id ??
+        process.env["PLKS_DEV_USER_ID"] ??
+        "00000000-0000-0000-0000-000000000000";
       const courses = await structuredStore.getCoursesByUser(userId);
 
       // For now, return default values since pipelineStage is not in the database schema
@@ -91,6 +95,8 @@ function createGetPipelineSummaryHandler(structuredStore: IStructuredStore): Rou
   };
 }
 
+import { authMiddleware } from "../middleware/auth.js";
+
 export function registerOrchestratorRoutes(
   app: FastifyInstance,
   orchestrator: OrchestratorService,
@@ -102,10 +108,18 @@ export function registerOrchestratorRoutes(
   const retrySessionHandler = createRetrySessionHandler(orchestrator);
   const getPipelineSummaryHandler = createGetPipelineSummaryHandler(structuredStore);
 
-  app.post(`${prefix}/orchestrator/start`, startSessionHandler);
-  app.get(`${prefix}/orchestrator/status/:sessionId`, getSessionStatusHandler);
-  app.post(`${prefix}/orchestrator/retry/:sessionId`, retrySessionHandler);
-  app.get(`${prefix}/pipeline/summary`, getPipelineSummaryHandler);
+  app.post(`${prefix}/orchestrator/start`, { preHandler: authMiddleware }, startSessionHandler);
+  app.get(
+    `${prefix}/orchestrator/status/:sessionId`,
+    { preHandler: authMiddleware },
+    getSessionStatusHandler,
+  );
+  app.post(
+    `${prefix}/orchestrator/retry/:sessionId`,
+    { preHandler: authMiddleware },
+    retrySessionHandler,
+  );
+  app.get(`${prefix}/pipeline/summary`, { preHandler: authMiddleware }, getPipelineSummaryHandler);
 }
 
 // Export handlers for testing

@@ -24,14 +24,25 @@ import type {
   RawAssetData,
   UpdateCourseRequest,
 } from "../types/course";
+import { supabase } from "./supabase";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
 const API_PREFIX = "/api";
 
+async function getAccessToken(): Promise<string | null> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  return session?.access_token ?? null;
+}
+
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
+  const accessToken = await getAccessToken();
+
   const response = await fetch(`${API_BASE_URL}${url}`, {
     headers: {
       "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...options?.headers,
     },
     ...options,
@@ -71,8 +82,13 @@ export async function uploadFile(file: File, courseId?: string): Promise<IngestF
     formData.append("courseId", courseId);
   }
 
+  const accessToken = await getAccessToken();
+
   const response = await fetch(`${API_BASE_URL}${API_PREFIX}/ingestion/upload`, {
     method: "POST",
+    headers: {
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
     body: formData,
   });
 

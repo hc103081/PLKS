@@ -40,23 +40,23 @@ const { SessionStateStore } = await import("./modules/orchestrator/session-state
 const { createPipelineNodes } = await import("./modules/orchestrator/nodes.js");
 const { DagEngine } = await import("./core/dag/engine.js");
 const { OrchestratorService } = await import("./modules/orchestrator/orchestrator.service.js");
-const { registerOrchestratorRoutes } = await import("./routes/orchestrator.js");
 
 // Import ingestion components
 const { IngestionPipeline } = await import("./modules/ingestion/ingestion-pipeline.js");
-const { registerIngestionRoutes } = await import("./routes/ingestion.js");
 
 // Import gamification components
 const { createGamificationService } = await import(
   "./modules/gamification/gamification.service.js"
 );
-const { registerGamificationRoutes } = await import("./routes/gamification.js");
-
-// Import courses components
-const { registerCoursesRoutes } = await import("./routes/courses.js");
 
 // Import export components
 const { ExportService } = await import("./modules/export/export.service.js");
+
+// Import routes
+const { registerOrchestratorRoutes } = await import("./routes/orchestrator.js");
+const { registerIngestionRoutes } = await import("./routes/ingestion.js");
+const { registerGamificationRoutes } = await import("./routes/gamification.js");
+const { registerCoursesRoutes } = await import("./routes/courses.js");
 const { registerExportRoutes } = await import("./routes/export.js");
 
 const env = loadEnv();
@@ -140,18 +140,22 @@ const app = Fastify({
 });
 
 // CORS configuration
-  const corsOrigins = env.NODE_ENV === "production" 
-    ? ["https://plks.vercel.app", "https://plks.vercel.app/"] 
+const corsOrigins =
+  env.NODE_ENV === "production"
+    ? ["https://plks.vercel.app", "https://plks.vercel.app/"]
     : (origin: string | undefined, cb: (err: Error | null, allowed: boolean) => void) => {
-        const ok = !origin || origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:");
+        const ok =
+          !origin ||
+          origin.startsWith("http://localhost:") ||
+          origin.startsWith("http://127.0.0.1:");
         cb(null, ok);
       };
 
-  const fpCors = await import("@fastify/cors");
-  await app.register(fpCors.default, {
-    origin: corsOrigins,
-    credentials: true,
-  });
+const fpCors = await import("@fastify/cors");
+await app.register(fpCors.default, {
+  origin: corsOrigins,
+  credentials: true,
+});
 
 // Register multipart plugin for file uploads
 await app.register(multipart, {

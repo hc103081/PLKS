@@ -6,6 +6,7 @@ import type { Course } from "@plks/shared/types/database";
 import type { FastifyInstance, RouteHandlerMethod } from "fastify";
 import { type Result, err, ok } from "neverthrow";
 import { z } from "zod";
+import type { AuthenticatedRequest } from "../middleware/auth.js";
 
 const CreateCourseSchema = z.object({
   semester: z.string().min(1),
@@ -22,9 +23,12 @@ const CourseParamsSchema = z.object({
 });
 
 function createGetCoursesHandler(structuredStore: IStructuredStore): RouteHandlerMethod {
-  return async (_request, reply) => {
+  return async (request: AuthenticatedRequest, reply) => {
     try {
-      const userId = process.env["PLKS_DEV_USER_ID"] ?? "00000000-0000-0000-0000-000000000000";
+      const userId =
+        request.user?.id ??
+        process.env["PLKS_DEV_USER_ID"] ??
+        "00000000-0000-0000-0000-000000000000";
       const courses = await structuredStore.getCoursesByUser(userId);
       // Transform database Course to CourseCardData format expected by frontend
       const courseCardData = courses.map((course) => ({
@@ -68,7 +72,7 @@ function createGetCoursesHandler(structuredStore: IStructuredStore): RouteHandle
 }
 
 function createCreateCourseHandler(structuredStore: IStructuredStore): RouteHandlerMethod {
-  return async (request, reply) => {
+  return async (request: AuthenticatedRequest, reply) => {
     // 先定義 input 以便在 catch block 中使用
     let input: {
       semester: string;
@@ -78,12 +82,14 @@ function createCreateCourseHandler(structuredStore: IStructuredStore): RouteHand
       type: "required" | "elective" | "general";
       instructor?: string | undefined;
       location?: string | undefined;
+      userId: string;
     } = {
       semester: "",
       code: "",
       name: "",
       credits: 0,
       type: "required",
+      userId: "",
     };
 
     try {
@@ -95,7 +101,11 @@ function createCreateCourseHandler(structuredStore: IStructuredStore): RouteHand
         });
       }
 
-      // 只傳遞課程相關欄位，不包含 userId (由 adapter 從 auth context 取得)
+      const userId =
+        request.user?.id ??
+        process.env["PLKS_DEV_USER_ID"] ??
+        "00000000-0000-0000-0000-000000000000";
+      // 只傳遞課程相關欄位，userId 從 auth context 取得
       input = {
         semester: parseResult.data.semester,
         code: parseResult.data.code,
@@ -104,14 +114,12 @@ function createCreateCourseHandler(structuredStore: IStructuredStore): RouteHand
         type: parseResult.data.type,
         instructor: parseResult.data.instructor,
         location: parseResult.data.location,
+        userId,
       };
       console.log("[courses.ts] createCourse input:", input);
 
-      const userId = process.env["PLKS_DEV_USER_ID"] ?? "00000000-0000-0000-0000-000000000000";
-      // 在 input 中加入 userId（ adapter 會使用 this.getUserId()，但這裡顯式傳遞以確保正確）
       const course = await structuredStore.createCourse({
         ...input,
-        userId,
       });
       console.log("[courses.ts] createCourse success:", course);
       return reply.status(201).send(course);
@@ -280,6 +288,8 @@ function createGetQuizItemsByCourseHandler(structuredStore: IStructuredStore): R
   };
 }
 
+import { authMiddleware } from "../middleware/auth.js";
+
 export function registerCoursesRoutes(
   app: FastifyInstance,
   structuredStore: IStructuredStore,
@@ -293,13 +303,21 @@ export function registerCoursesRoutes(
   const getConceptNodesByCourseHandler = createGetConceptNodesByCourseHandler(structuredStore);
   const getQuizItemsByCourseHandler = createGetQuizItemsByCourseHandler(structuredStore);
 
-  app.get(`${prefix}/courses`, getCoursesHandler);
-  app.post(`${prefix}/courses`, createCourseHandler);
-  app.get(`${prefix}/courses/:id`, getCourseByIdHandler);
-  app.patch(`${prefix}/courses/:id`, updateCourseHandler);
-  app.delete(`${prefix}/courses/:id`, deleteCourseHandler);
-  app.get(`${prefix}/courses/:id/concepts`, getConceptNodesByCourseHandler);
-  app.get(`${prefix}/courses/:id/quiz`, getQuizItemsByCourseHandler);
+  app.get(`${prefix}/courses`, { preHandler: authMiddleware }, getCoursesHandler);
+  app.post(`${prefix}/courses`, { preHandler: authMiddleware }, createCourseHandler);
+  app.get(`${prefix}/courses/:id`, { preHandler: authMiddleware }, getCourseByIdHandler);
+  app.patch(`${prefix}/courses/:id`, { preHandler: authMiddleware }, updateCourseHandler);
+  app.delete(`${prefix}/courses/:id`, { preHandler: authMiddleware }, deleteCourseHandler);
+  app.get(
+    `${prefix}/courses/:id/concepts`,
+    { preHandler: authMiddleware },
+    getConceptNodesByCourseHandler,
+  );
+  app.get(
+    `${prefix}/courses/:id/quiz`,
+    { preHandler: authMiddleware },
+    getQuizItemsByCourseHandler,
+  );
 }
 
 // Export handlers for testing

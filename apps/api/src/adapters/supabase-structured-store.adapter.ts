@@ -9,7 +9,6 @@ import { injectable } from "tsyringe";
 @injectable()
 export class SupabaseStructuredStore implements IStructuredStore {
   private readonly supabase: SupabaseClient;
-  private readonly devUserId: string; // In a real app, this would come from auth context
 
   constructor() {
     const supabaseUrl = process.env["VITE_SUPABASE_URL"] ?? process.env["SUPABASE_URL"];
@@ -22,28 +21,18 @@ export class SupabaseStructuredStore implements IStructuredStore {
     }
 
     this.supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
-
-    // For development, use a fixed user ID if provided
-    const devUserId = process.env["PLKS_DEV_USER_ID"];
-    if (devUserId) {
-      this.devUserId = devUserId;
-    } else {
-      // Fallback to a hardcoded UUID for development (should be replaced with auth)
-      this.devUserId = "00000000-0000-0000-0000-000000000000";
-    }
-  }
-
-  private getUserId(): string {
-    // TODO: Replace with actual auth context when implemented
-    return this.devUserId;
   }
 
   async createCourse(input: CreateCourseInput): Promise<Course> {
     try {
-      const userId = this.getUserId();
+      // 使用 input 中的 userId (從前端 auth context 傳遞)
+      const userId = input.userId;
       // 只記錄課程欄位，不包含 userId (以避免 TypeScript 重複屬性錯誤)
       const { userId: _, ...inputWithoutUserId } = input;
-      console.log("[supabase-structured-store] createCourse input:", { ...inputWithoutUserId });
+      console.log("[supabase-structured-store] createCourse input:", {
+        ...inputWithoutUserId,
+        userId,
+      });
       const { data, error } = await this.supabase
         .from("courses")
         .insert({
@@ -368,11 +357,10 @@ export class SupabaseStructuredStore implements IStructuredStore {
 
   async upsertProgress(progress: ProgressInput): Promise<void> {
     try {
-      const userId = this.getUserId();
       const { error } = await this.supabase.from("user_progress").upsert({
         concept_id: progress.concept_id,
         course_id: progress.course_id,
-        user_id: userId,
+        user_id: progress.user_id,
         created_at: progress.created_at,
         due_date: progress.due_date,
         ease_factor: progress.ease_factor,
@@ -420,7 +408,7 @@ export class SupabaseStructuredStore implements IStructuredStore {
         sidekick_context: log.sidekick_context,
         sidekick_used: log.sidekick_used,
         user_answer: log.user_answer,
-        user_id: this.getUserId(),
+        user_id: log.user_id,
       });
 
       if (error) throw error;
