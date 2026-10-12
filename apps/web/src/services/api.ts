@@ -201,26 +201,15 @@ export async function getPipelineSummary(): Promise<PipelineSummary> {
 
 export async function createCourse(data: CreateCourseRequest): Promise<void> {
   console.log("[api.ts] createCourse request:", data);
-  const response = await fetch(`${API_BASE_URL}${API_PREFIX}/courses`, {
+  const response = await fetchJson<unknown>(`${API_PREFIX}/courses`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
 
-  console.log("[api.ts] createCourse response status:", response.status);
+  console.log("[api.ts] createCourse response status:", (response as { status?: number }).status ?? 'N/A');
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: "Unknown error" }));
-    console.error("[api.ts] createCourse error:", error);
-    throw new Error(error.error ?? `HTTP ${response.status}`);
-  }
-
-  // 檢查回應內容是否包含錯誤
-  const result = await response.json().catch(() => ({}));
-  console.log("[api.ts] createCourse response body:", result);
-  if (result.error) {
-    throw new Error(result.error);
-  }
+  // fetchJson already throws on non-ok status, so we just need to check the body
+  console.log("[api.ts] createCourse response body:", response);
 }
 
 export async function updateCourse(data: UpdateCourseRequest): Promise<void> {
