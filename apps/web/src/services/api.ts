@@ -206,7 +206,10 @@ export async function createCourse(data: CreateCourseRequest): Promise<void> {
     body: JSON.stringify(data),
   });
 
-  console.log("[api.ts] createCourse response status:", (response as { status?: number }).status ?? 'N/A');
+  console.log(
+    "[api.ts] createCourse response status:",
+    (response as { status?: number }).status ?? "N/A",
+  );
 
   // fetchJson already throws on non-ok status, so we just need to check the body
   console.log("[api.ts] createCourse response body:", response);

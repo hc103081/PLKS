@@ -444,8 +444,8 @@ export function Dashboard() {
                     semester={course.semester}
                     status={course.status}
                     progress={course.progress}
-                    onView={() => console.log("view", course.id)}
-                    onManage={() => console.log("manage", course.id)}
+                    onView={(courseId) => navigate(`/course/${courseId}?tab=outline`)}
+                    onManage={(courseId) => navigate(`/course/${courseId}?tab=raw`)}
                   />
                 ))}
               </div>
