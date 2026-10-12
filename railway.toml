@@ -1,6 +1,10 @@
 # Railway 部署配置 - 使用 Railpack
 [build]
 builder = "RAILPACK"
+# 指定 Node.js 22 (Supabase realtime-js 需要原生 WebSocket)
+[build.env]
+NIXPACKS_NODE_VERSION = "22"
+
 # 在 monorepo 根目錄安裝依賴 (Railpack 自動偵測 pnpm)，再建置 @plks/api；`...` 後綴會先建置其 workspace 相依套件 @plks/shared
 buildCommand = "pnpm install --frozen-lockfile && pnpm --filter @plks/api... run build"
 watchPatterns = ["/apps/api/**", "/packages/**", "/railway.toml", "/pnpm-lock.yaml", "/package.json"]
