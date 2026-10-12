@@ -33,11 +33,35 @@ async function getAccessToken(): Promise<string | null> {
   const {
     data: { session },
   } = await supabase.auth.getSession();
+
+  // Debug logging
+  console.log(
+    "[api.ts] getAccessToken - session:",
+    session
+      ? {
+          user_id: session.user?.id,
+          expires_at: session.expires_at,
+          has_token: !!session.access_token,
+          token_preview: `${session.access_token?.substring(0, 20)}...`,
+        }
+      : "NO SESSION",
+  );
+
   return session?.access_token ?? null;
 }
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const accessToken = await getAccessToken();
+
+  // Debug logging
+  console.log(
+    "[api.ts] fetchJson - url:",
+    url,
+    "hasToken:",
+    !!accessToken,
+    "tokenPreview:",
+    `${accessToken?.substring(0, 20)}...`,
+  );
 
   const response = await fetch(`${API_BASE_URL}${url}`, {
     headers: {
@@ -48,8 +72,12 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
     ...options,
   });
 
+  // Debug logging
+  console.log("[api.ts] fetchJson - response status:", response.status, "url:", url);
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: "Unknown error" }));
+    console.error("[api.ts] fetchJson - error:", error);
     throw new Error(error.error ?? `HTTP ${response.status}`);
   }
 
