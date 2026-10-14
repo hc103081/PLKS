@@ -1,14 +1,15 @@
-// apps/api/src/routes/sidekick-stream.ts
-import type { FastifyInstance } from "fastify";
-import { z } from "zod";
-import { container } from "tsyringe";
 import type { IAIReasoningGateway } from "@plks/shared/contracts";
 import type { IStorageAdapter } from "@plks/shared/contracts";
-import type { GamificationServiceInterface } from "../modules/gamification/gamification.service.js";
 import type { ConceptNodePayload } from "@plks/shared/schemas";
 import type { QuizItemPayload } from "@plks/shared/schemas";
+// apps/api/src/routes/sidekick-stream.ts
+import type { FastifyInstance } from "fastify";
+import { container } from "tsyringe";
+import { z } from "zod";
+import type { GamificationServiceInterface } from "../modules/gamification/gamification.service.js";
+import { TOKENS } from "../config/di.js";
 
-const SidekickStreamQuerySchema = z.object({
+const _SidekickStreamQuerySchema = z.object({
   sessionId: z.string().uuid(),
   question: z.string().min(1),
 });
@@ -19,8 +20,8 @@ interface SidekickStreamQuery {
 }
 
 export async function sidekickStreamRoutes(fastify: FastifyInstance): Promise<void> {
-  const aiGateway = container.resolve<IAIReasoningGateway>("IAIReasoningGateway");
-  const storage = container.resolve<IStorageAdapter>("IStorageAdapter");
+  const aiGateway = container.resolve<IAIReasoningGateway>(TOKENS.IAIReasoningGateway);
+  const storage = container.resolve<IStorageAdapter>(TOKENS.IStorageAdapter);
   const gamification = container.resolve<GamificationServiceInterface>("GamificationService");
 
   fastify.get<{ Querystring: SidekickStreamQuery }>(
@@ -63,7 +64,10 @@ export async function sidekickStreamRoutes(fastify: FastifyInstance): Promise<vo
       // Get slide URI and generate presigned URL
       let slideUris: string[] = [];
       if (relatedConcept?.sourceEvidence?.slideUri) {
-        const presignedResult = await storage.generatePresignedUrl(relatedConcept.sourceEvidence.slideUri, 300); // 5 minutes
+        const presignedResult = await storage.generatePresignedUrl(
+          relatedConcept.sourceEvidence.slideUri,
+          300,
+        ); // 5 minutes
         if (presignedResult.isOk()) {
           slideUris = [presignedResult.value];
         }
@@ -87,7 +91,11 @@ export async function sidekickStreamRoutes(fastify: FastifyInstance): Promise<vo
         const systemPrompt = buildSidekickSystemPrompt(currentQuiz, relatedConcept);
 
         // Call AI Gateway streaming
-        for await (const chunk of aiGateway.multimodalInferStream(systemPrompt, question, slideUris)) {
+        for await (const chunk of aiGateway.multimodalInferStream(
+          systemPrompt,
+          question,
+          slideUris,
+        )) {
           if (chunk.content) {
             sendEvent({ type: "delta", content: chunk.content });
           }
