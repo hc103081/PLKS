@@ -13,29 +13,57 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// 開發模式模擬用戶 (僅用於 UI 測試)
+const DEV_MOCK_USER = {
+  id: "dev-user-123",
+  email: "dev@plks.local",
+};
+
+const DEV_MOCK_SESSION = {
+  access_token: "dev-mock-token",
+  user: DEV_MOCK_USER,
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthContextType["user"]>(null);
   const [session, setSession] = useState<AuthContextType["session"]>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    // 開發模式：自動注入模擬用戶以便 UI 測試
+    const isDev = import.meta.env.DEV || import.meta.env["VITE_DEV_MOCK_AUTH"] === "true";
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    if (isDev) {
+      // 檢查是否已有真實 session
+      supabase.auth.getSession().then(({ data: { session: realSession } }) => {
+        if (realSession) {
+          setSession(realSession);
+          setUser(realSession.user ?? null);
+        } else {
+          // 使用模擬用戶
+          setSession(DEV_MOCK_SESSION);
+          setUser(DEV_MOCK_USER);
+        }
+        setLoading(false);
+      });
+    } else {
+      // 生產模式：正常認證流程
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      });
 
-    return () => subscription.unsubscribe();
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      });
+
+      return () => subscription.unsubscribe();
+    }
   }, []);
 
   const signInWithMagicLink = async (email: string) => {
@@ -54,12 +82,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
+      provider: "google",
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
         queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
+          access_type: "offline",
+          prompt: "consent",
         },
       },
     });
@@ -67,7 +95,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signInWithMagicLink, signInWithGoogle, signOut }}>
+    <AuthContext.Provider
+      value={{ user, session, loading, signInWithMagicLink, signInWithGoogle, signOut }}
+    >
       {children}
     </AuthContext.Provider>
   );
