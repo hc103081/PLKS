@@ -11,9 +11,14 @@ import "./index.css";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 30,
+      staleTime: 1000 * 30,      // 30 秒
+      gcTime: 1000 * 60 * 10,    // 10 分鐘 (舊稱 cacheTime)
       retry: 1,
       refetchOnWindowFocus: false,
+      refetchOnReconnect: 'always',
+    },
+    mutations: {
+      retry: 0,
     },
   },
 });

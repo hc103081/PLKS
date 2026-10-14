@@ -11,20 +11,14 @@ import { CourseCardSkeleton, LoadingSkeleton } from "../components/shared";
 import {
   getConceptTree,
   getCourseById,
-  getGameSessionState,
-  getGameState,
   getPipelineStatus,
   getRawAsset,
-  requestSidekickHelp,
   startSession,
-  submitAnswer,
 } from "../services/api";
 import { useCoursePageStore } from "../stores/coursePageStore";
-import type { QuizItemPayload } from "../types/api";
 import type {
   CourseCardData,
   CourseTab,
-  GameSessionState,
   OutlineTreeData,
   PipelineStatusResponse,
   RawAssetData,
@@ -37,19 +31,16 @@ export function CoursePage() {
 
   // URL State
   const tab = (searchParams.get("tab") as CourseTab) || "outline";
-  const sessionId = searchParams.get("session") || undefined;
+  const sessionId = searchParams.get("session") ?? undefined;
   const subTab = (searchParams.get("subTab") as "audio" | "slides" | "transcript") || "audio";
-  const node = (searchParams.get("node") as any) || undefined;
+  const node = (searchParams.get("node") as any) ?? undefined;
   const view = (searchParams.get("view") as "tree" | "canvas" | "split") || "split";
 
-  // Store actions
+  // Store actions (UI state only)
   const {
-    game,
     outline,
     pipeline,
     raw,
-    setGameSession,
-    updateGameProgress,
     setEditingNode,
     setOutlineViewMode,
     toggleNodeExpanded,
@@ -63,49 +54,6 @@ export function CoursePage() {
 
   const queryClient = useQueryClient();
 
-  // Game API handlers
-  const handleAnswerSubmit = async (
-    answer: string,
-    timeSpentMs: number,
-  ): Promise<{ isCorrect: boolean; xpEarned: number; nextQuiz?: QuizItemPayload }> => {
-    if (!sessionId) return { isCorrect: false, xpEarned: 0 };
-    try {
-      const result = await submitAnswer({ sessionId, userAnswer: answer, timeSpentMs });
-      // Invalidate queries to refetch updated game state
-      queryClient.invalidateQueries({ queryKey: ["game-session-state", sessionId] });
-      queryClient.invalidateQueries({ queryKey: ["game-session", sessionId] });
-      if (result.nextQuiz) {
-        return {
-          isCorrect: result.isCorrect,
-          xpEarned: result.xpEarned,
-          nextQuiz: result.nextQuiz,
-        };
-      }
-      return { isCorrect: result.isCorrect, xpEarned: result.xpEarned };
-    } catch (error) {
-      console.error("Failed to submit answer:", error);
-      return { isCorrect: false, xpEarned: 0 };
-    }
-  };
-
-  const handleSidekickRequest = async () => {
-    if (!sessionId) return;
-    try {
-      await requestSidekickHelp(sessionId);
-      // Invalidate queries to refetch updated game state
-      queryClient.invalidateQueries({ queryKey: ["game-session-state", sessionId] });
-      queryClient.invalidateQueries({ queryKey: ["game-session", sessionId] });
-    } catch (error) {
-      console.error("Failed to request sidekick help:", error);
-    }
-  };
-
-  const handleSidekickSendMessage = async (message: string) => {
-    // For now, just log - the Sidekick chat would need a separate API endpoint
-    console.log("Sidekick message:", message);
-    // TODO: Implement sidekick chat API
-  };
-
   // Fetch course data
   const { data: course, isLoading: courseLoading } = useQuery({
     queryKey: ["course", courseId],
@@ -118,7 +66,6 @@ export function CoursePage() {
     queryKey: ["raw-asset", sessionId],
     queryFn: () => getRawAsset(courseId!, sessionId!),
     enabled: !!courseId && !!sessionId && (tab === "raw" || tab === "pipeline"),
-    staleTime: 30000,
   });
 
   // Fetch pipeline status
@@ -127,7 +74,6 @@ export function CoursePage() {
     queryFn: () => getPipelineStatus(sessionId!),
     enabled: !!sessionId && tab === "pipeline",
     refetchInterval: tab === "pipeline" ? 3000 : false,
-    staleTime: 2000,
   });
 
   // Fetch concept tree
@@ -135,31 +81,9 @@ export function CoursePage() {
     queryKey: ["concept-tree", courseId],
     queryFn: () => getConceptTree(courseId!),
     enabled: !!courseId && (tab === "outline" || tab === "game"),
-    staleTime: 60000,
   });
 
-  // Fetch game state for UI and full game session for data
-  const { data: gameState, isLoading: gameLoading } = useQuery({
-    queryKey: ["game-session-state", sessionId],
-    queryFn: () => getGameSessionState(sessionId!),
-    enabled: !!sessionId && tab === "game",
-    staleTime: 5000,
-  });
-
-  const { data: gameSession } = useQuery({
-    queryKey: ["game-session", sessionId],
-    queryFn: () => getGameState(sessionId!),
-    enabled: !!sessionId && tab === "game",
-    staleTime: 5000,
-  });
-
-  // Sync URL to store
-  useEffect(() => {
-    if (sessionId && sessionId !== game.sessionId) {
-      setGameSession(sessionId);
-    }
-  }, [sessionId, game.sessionId, setGameSession]);
-
+  // Sync URL to store (UI state only)
   useEffect(() => {
     setRawSubTab(subTab);
   }, [subTab, setRawSubTab]);
@@ -239,7 +163,7 @@ export function CoursePage() {
         activeTab={tab}
         onTabChange={handleTabChange}
         onBack={() => navigate("/")}
-        {...(sessionId !== undefined ? { sessionId } : {})}
+        {...(sessionId ? { sessionId } : {})}
         onStartSession={handleStartSession}
       />
 
@@ -247,7 +171,7 @@ export function CoursePage() {
       <CourseTabs
         activeTab={tab}
         onTabChange={handleTabChange}
-        {...(sessionId !== undefined ? { sessionId } : {})}
+        {...(sessionId ? { sessionId } : {})}
         {...(pipelineStatus ? { pipelineStatus: pipelineStatus.status } : {})}
       />
 
@@ -295,18 +219,7 @@ export function CoursePage() {
         )}
 
         {tab === "game" && (
-          <TabGame
-            course={course!}
-            gameState={gameState}
-            gameSession={gameSession}
-            _sessionId={sessionId}
-            isLoading={gameLoading}
-            sidekickOpen={game.sidekickOpen}
-            onSidekickToggle={() => updateGameProgress({ sidekickOpen: !game.sidekickOpen })}
-            onAnswerSubmit={handleAnswerSubmit}
-            onSidekickRequest={handleSidekickRequest}
-            onSidekickSendMessage={handleSidekickSendMessage}
-          />
+          <TabGame course={course!} sessionId={sessionId} />
         )}
       </div>
     </div>
@@ -329,10 +242,7 @@ function CoursePageSkeleton() {
         ))}
       </div>
       <div className="main-content-wrapper p-8 animate-pulse">
-        <div
-          className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-          style={{ gridTemplateColumns: "280px 1fr 320px" }}
-        >
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" style={{ gridTemplateColumns: "280px 1fr 320px" }}>
           <LoadingSkeleton variant="card" height={600} />
           <LoadingSkeleton variant="card" height={600} />
           <LoadingSkeleton variant="card" height={600} />

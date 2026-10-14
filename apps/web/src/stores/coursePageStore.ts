@@ -1,18 +1,13 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { CoursePageStore, GameUIState, PipelineNodeKey } from "../types/course";
+import type { PipelineNodeKey } from "../types/course";
 
-const initialGameState: GameUIState = {
-  sessionId: "",
-  currentQuizIndex: 0,
-  score: 0,
-  streak: 0,
-  sidekickOpen: false,
-};
+type OutlineViewMode = "tree" | "canvas" | "split";
+type RawSubTab = "audio" | "slides" | "transcript";
 
 const initialOutlineState = {
   editingNodeId: null as string | null,
-  viewMode: "split" as const,
+  viewMode: "split" as OutlineViewMode,
   expandedNodeIds: [] as string[],
 };
 
@@ -23,28 +18,33 @@ const initialPipelineState = {
 };
 
 const initialRawState = {
-  activeSubTab: "audio" as const,
+  activeSubTab: "audio" as RawSubTab,
   currentTime: 0,
   currentSlide: 0,
 };
 
+interface CoursePageStore {
+  outline: typeof initialOutlineState;
+  pipeline: typeof initialPipelineState;
+  raw: typeof initialRawState;
+
+  setEditingNode: (editingNodeId: string | null) => void;
+  setOutlineViewMode: (viewMode: OutlineViewMode) => void;
+  toggleNodeExpanded: (nodeId: string) => void;
+  setPipelineSelectedNode: (selectedNode: PipelineNodeKey | null) => void;
+  setPipelineConfigDrawer: (configDrawerOpen: boolean) => void;
+  setPipelineNodeDetailDrawer: (nodeDetailDrawerOpen: boolean) => void;
+  setRawSubTab: (activeSubTab: RawSubTab) => void;
+  setRawCurrentTime: (currentTime: number) => void;
+  setRawCurrentSlide: (currentSlide: number) => void;
+}
+
 export const useCoursePageStore = create<CoursePageStore>()(
   persist(
     (set) => ({
-      game: initialGameState,
       outline: initialOutlineState,
       pipeline: initialPipelineState,
       raw: initialRawState,
-
-      setGameSession: (sessionId) =>
-        set({
-          game: { ...initialGameState, sessionId },
-        }),
-
-      updateGameProgress: (patch) =>
-        set((state) => ({
-          game: { ...state.game, ...patch },
-        })),
 
       setEditingNode: (editingNodeId) =>
         set((state) => ({

@@ -14,6 +14,7 @@ import type {
 } from "../types/api";
 // apps/web/src/services/api.ts
 import type {
+  ConceptNodeWithMeta,
   CourseCardData,
   CourseTab,
   CoursesResponse,
@@ -259,7 +260,51 @@ export async function retryPipeline(sessionId: string): Promise<void> {
 
 // Concept tree API
 export async function getConceptTree(courseId: string): Promise<OutlineTreeData> {
-  return fetchJson<OutlineTreeData>(`${API_PREFIX}/concept-tree/${courseId}`);
+  const response = await fetchJson<{
+    courseId: string;
+    tree: Array<{
+      nodeId: string;
+      term: string;
+      explanation: string;
+      chapterId: string | null;
+      order: number;
+      children: unknown[];
+    }>;
+    chapters: Array<{
+      chapterId: string;
+      title: string;
+      order: number;
+    }>;
+  }>(`${API_PREFIX}/concept-tree/${courseId}`);
+
+  // Transform backend response to frontend OutlineTreeData format
+  const nodes: ConceptNodeWithMeta[] = response.tree.map((node) => ({
+    conceptId: node.nodeId,
+    courseId: response.courseId,
+    term: node.term,
+    explanation: node.explanation,
+    relatedTerms: [],
+    sourceEvidence: {
+      transcriptRef: "",
+      slideUri: "",
+    },
+    depth: 0,
+    order: node.order,
+    // parentId is optional - omit for root nodes
+    children: [],
+    isExpanded: true,
+    isEditing: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    version: 1,
+  }));
+
+  const rootNodeIds = nodes.map((n) => n.conceptId);
+
+  return {
+    nodes,
+    rootNodeIds,
+  };
 }
 
 // Game session state API

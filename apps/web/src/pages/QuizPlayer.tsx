@@ -1,8 +1,8 @@
 // apps/web/src/pages/QuizPlayer.tsx
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { useGamification } from "../hooks/useGamification.js";
-import type { QuizItemPayload } from "../types/api.js";
+import { useGamification } from "../hooks/useGamification";
+import type { QuizItemPayload } from "../types/api";
 
 export function QuizPlayer() {
   const navigate = useNavigate();
@@ -11,61 +11,29 @@ export function QuizPlayer() {
   const sessionId = searchParams.get("session");
 
   const {
-    session,
+    gameSession,
+    gameState,
     currentQuiz,
-    sidekickResponse,
     isLoading,
-    error,
-    showSidekick,
-    startNewGame,
-    handleAnswer,
+    isSubmitting,
+    submitAnswer,
     requestHelp,
     dismissSidekick,
-    resetGame,
-    setError,
-  } = useGamification();
+    advanceQuiz,
+    startGame,
+    error,
+  } = useGamification({ courseId: courseId ?? undefined, sessionId: sessionId ?? undefined });
 
   const [userAnswer, setUserAnswer] = useState("");
   const [showResult, setShowResult] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [answerStartTime, setAnswerStartTime] = useState(Date.now());
 
+  // Auto-start game if no session exists
   useEffect(() => {
-    if (courseId && !session) {
-      startNewGame(courseId);
+    if (courseId && !gameState?.sessionId) {
+      startGame();
     }
-  }, [courseId, session, startNewGame]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!userAnswer.trim() || !session) return;
-
-    setIsSubmitting(true);
-    await handleAnswer(userAnswer.trim());
-    setShowResult(true);
-    setIsSubmitting(false);
-  };
-
-  const handleContinue = () => {
-    setShowResult(false);
-    setUserAnswer("");
-  };
-
-  const handleSidekickDismiss = () => {
-    dismissSidekick();
-    setShowResult(false);
-  };
-
-  const goBackToCourse = () => {
-    navigate(`/course/${courseId}?session=${sessionId}`);
-  };
-
-  if (!courseId) {
-    return <div className="min-h-screen flex items-center justify-center">未選擇課程</div>;
-  }
-
-  if (!session && isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">載入測驗中...</div>;
-  }
+  }, [courseId, gameState?.sessionId, startGame]);
 
   // Helper to get Chinese label for quiz type
   const getTypeLabel = (type: string): string => {
@@ -81,6 +49,39 @@ export function QuizPlayer() {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userAnswer.trim() || !gameState) return;
+
+    const timeSpentMs = Date.now() - answerStartTime;
+    await submitAnswer(userAnswer.trim(), timeSpentMs);
+    setShowResult(true);
+  };
+
+  const handleContinue = () => {
+    setShowResult(false);
+    setUserAnswer("");
+    setAnswerStartTime(Date.now());
+    advanceQuiz();
+  };
+
+  const handleSidekickDismiss = () => {
+    dismissSidekick();
+    setShowResult(false);
+  };
+
+  const goBackToCourse = () => {
+    navigate(`/course/${courseId}?session=${sessionId}`);
+  };
+
+  if (!courseId) {
+    return <div className="min-h-screen flex items-center justify-center">未選擇課程</div>;
+  }
+
+  if (!gameState && isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">載入測驗中...</div>;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-3xl mx-auto">
@@ -93,17 +94,17 @@ export function QuizPlayer() {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">測驗: {courseId}</h1>
               <p className="text-gray-600 text-sm">
-                第 {session?.currentIndex ?? 0 + 1} 題，共 {session?.quizItems.length ?? 0} 題
+                第 {gameState?.currentQuizIndex ?? 0 + 1} 題，共 {gameState?.totalQuizzes ?? 0} 題
               </p>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <p className="text-2xl font-bold text-blue-600">{session?.score ?? 0} XP</p>
+              <p className="text-2xl font-bold text-blue-600">{gameState?.score ?? 0} XP</p>
               <p className="text-xs text-gray-500">分數</p>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-orange-600">🔥 {session?.streak ?? 0}</p>
+              <p className="text-2xl font-bold text-orange-600">🔥 {gameState?.streak ?? 0}</p>
               <p className="text-xs text-gray-500">連續</p>
             </div>
           </div>
@@ -111,15 +112,13 @@ export function QuizPlayer() {
 
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 flex justify-between">
-            {error}
-            <button onClick={() => setError(null)} className="text-red-500 hover:underline">
-              關閉
-            </button>
+            {String(error)}
+            <button onClick={() => {}} className="text-red-500 hover:underline">關閉</button>
           </div>
         )}
 
         {/* Sidekick Modal */}
-        {showSidekick && sidekickResponse && (
+        {gameState?.sidekickOpen && gameSession && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
             <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
               <div className="flex items-start justify-between mb-4">
@@ -127,58 +126,56 @@ export function QuizPlayer() {
                   <span className="text-2xl">🤖</span>
                   小幫手
                 </h2>
-                <button
-                  onClick={handleSidekickDismiss}
-                  className="text-gray-400 hover:text-gray-600"
-                >
+                <button onClick={handleSidekickDismiss} className="text-gray-400 hover:text-gray-600">
                   ✕
                 </button>
               </div>
 
               <div className="space-y-4">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <p className="font-medium text-blue-800 mb-1">{sidekickResponse.keyConcept}</p>
-                  <p className="text-blue-700 text-sm">{sidekickResponse.explanation}</p>
-                </div>
+                {gameState.sidekickHistory
+                  .filter((msg) => msg.role === "assistant")
+                  .slice(-1)
+                  .map((msg) => (
+                    <div key={msg.id} className="space-y-4">
+                      <div className="bg-blue-50 p-4 rounded-lg">
+                        <p className="font-medium text-blue-800 mb-1">
+                          {currentQuiz?.question ? "關於這道題目" : "學習建議"}
+                        </p>
+                        <p className="text-blue-700 text-sm">{msg.content}</p>
+                      </div>
 
-                <div className="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400">
-                  <p className="font-medium text-yellow-800 mb-1">💡 提示</p>
-                  <p className="text-yellow-700 text-sm">{sidekickResponse.actionableHint}</p>
-                </div>
+                      {msg.contextReferences && msg.contextReferences.length > 0 && (
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <p className="font-medium text-gray-800 mb-2">📎 參考資料</p>
+                          <ul className="space-y-1">
+                            {msg.contextReferences.map((ref, i) => (
+                              <li key={i} className="text-sm text-blue-600 hover:underline cursor-pointer">
+                                [{ref.type}] {ref.title} {ref.source && `(${ref.source})`}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
 
-                {sidekickResponse.relatedSlideUris.length > 0 && (
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="font-medium text-gray-800 mb-2">📎 相關投影片</p>
-                    <ul className="space-y-1">
-                      {sidekickResponse.relatedSlideUris.map((_uri, i) => (
-                        <li
-                          key={i}
-                          className="text-sm text-blue-600 hover:underline cursor-pointer"
-                        >
-                          投影片 {i + 1}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                      <p className="text-green-700 text-sm italic text-center">
+                        加油！繼續努力學習！💪
+                      </p>
+                    </div>
+                  ))}
 
-                <p className="text-green-700 text-sm italic text-center">
-                  {sidekickResponse.encouragement}
-                </p>
+                <button
+                  onClick={handleSidekickDismiss}
+                  className="mt-6 w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                >
+                  了解，讓我再試一次！
+                </button>
               </div>
-
-              <button
-                onClick={handleSidekickDismiss}
-                className="mt-6 w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-              >
-                了解，讓我再試一次！
-              </button>
             </div>
           </div>
         )}
 
         {/* Quiz Question */}
-        {!showSidekick && currentQuiz && (
+        {!gameState?.sidekickOpen && currentQuiz && (
           <div className="bg-white rounded-xl shadow p-8">
             <div className="mb-6">
               <span
@@ -186,8 +183,8 @@ export function QuizPlayer() {
                   currentQuiz.type === "multiple_choice"
                     ? "bg-blue-100 text-blue-800"
                     : currentQuiz.type === "true_false"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-purple-100 text-purple-800"
+                    ? "bg-green-100 text-green-800"
+                    : "bg-purple-100 text-purple-800"
                 }`}
               >
                 {getTypeLabel(currentQuiz.type)}
@@ -272,54 +269,44 @@ export function QuizPlayer() {
         )}
 
         {/* Result Feedback */}
-        {!showSidekick && showResult && session && (
+        {!gameState?.sidekickOpen && showResult && gameState && (
           <div className="mt-6 bg-white rounded-xl shadow p-6">
             <div className="flex items-center gap-3 mb-4">
               <div
                 className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                  session.answers[session.answers.length - 1]?.isCorrect
+                  gameState.answers[gameState.answers.length - 1]?.isCorrect
                     ? "bg-green-100 text-green-600"
                     : "bg-red-100 text-red-600"
                 }`}
               >
-                {session.answers[session.answers.length - 1]?.isCorrect ? (
+                {gameState.answers[gameState.answers.length - 1]?.isCorrect ? (
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 ) : (
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 )}
               </div>
               <div>
                 <h3
                   className={`font-semibold ${
-                    session.answers[session.answers.length - 1]?.isCorrect
+                    gameState.answers[gameState.answers.length - 1]?.isCorrect
                       ? "text-green-800"
                       : "text-red-800"
                   }`}
                 >
-                  {session.answers[session.answers.length - 1]?.isCorrect ? "正確！" : "不太正確"}
+                  {gameState.answers[gameState.answers.length - 1]?.isCorrect ? "正確！" : "不太正確"}
                 </h3>
                 <p className="text-gray-600 text-sm">
                   正確答案是：{" "}
-                  <strong>{session.quizItems[session.currentIndex - 1]?.correctAnswer}</strong>
+                  <strong>{gameSession?.quizItems[gameState.currentQuizIndex - 1]?.correctAnswer}</strong>
                 </p>
               </div>
             </div>
 
-            {!session.answers[session.answers.length - 1]?.isCorrect && (
+            {!gameState.answers[gameState.answers.length - 1]?.isCorrect && (
               <button
                 onClick={requestHelp}
                 className="w-full px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition"
@@ -328,11 +315,8 @@ export function QuizPlayer() {
               </button>
             )}
 
-            {session.answers[session.answers.length - 1]?.isCorrect && (
-              <button
-                onClick={handleContinue}
-                className="w-full px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-              >
+            {gameState.answers[gameState.answers.length - 1]?.isCorrect && (
+              <button onClick={handleContinue} className="w-full px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
                 下一題
               </button>
             )}
@@ -340,45 +324,32 @@ export function QuizPlayer() {
         )}
 
         {/* Game Completed */}
-        {!currentQuiz && session && session.state === "COMPLETED" && (
+        {!currentQuiz && gameState && gameState.currentQuizIndex >= (gameState.totalQuizzes || 0) && (
           <div className="bg-white rounded-xl shadow p-8 text-center">
             <div className="w-20 h-20 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
-              <svg
-                className="w-10 h-10 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
+              <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">測驗完成！🎉</h2>
             <p className="text-gray-600 mb-6">做得很好，完成所有問題！</p>
             <div className="grid grid-cols-3 gap-4 mb-6">
               <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-2xl font-bold text-blue-600">{session.score}</p>
+                <p className="text-2xl font-bold text-blue-600">{gameState.score}</p>
                 <p className="text-sm text-gray-500">總經驗值</p>
               </div>
               <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-2xl font-bold text-orange-600">🔥 {session.streak}</p>
+                <p className="text-2xl font-bold text-orange-600">🔥 {gameState.maxStreak}</p>
                 <p className="text-sm text-gray-500">最大連續</p>
               </div>
               <div className="p-4 bg-gray-50 rounded-lg">
                 <p className="text-2xl font-bold text-green-600">
-                  {session.answers.filter((a) => a.isCorrect).length} / {session.answers.length}
+                  {gameState.answers.filter((a) => a.isCorrect).length} / {gameState.answers.length}
                 </p>
                 <p className="text-sm text-gray-500">正確</p>
               </div>
             </div>
-            <button
-              onClick={() => navigate(`/course/${courseId}?session=${sessionId}`)}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-            >
+            <button onClick={goBackToCourse} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
               返回課程
             </button>
           </div>

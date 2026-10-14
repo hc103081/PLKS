@@ -1,18 +1,11 @@
 // apps/web/src/pages/Dashboard.tsx
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CourseCard } from "../components/dashboard/CourseCard";
 import { CreateCourseModal } from "../components/dashboard/CreateCourseModal";
 import { DashboardEmptyState } from "../components/dashboard/DashboardEmptyState";
 import { PipelineSummary } from "../components/dashboard/PipelineSummary";
 import { useDashboard } from "../hooks/useDashboard";
-import {
-  createCourse,
-  getCourses,
-  getPipelineSummary,
-  startSession,
-  uploadFile,
-} from "../services/api";
 import { useDashboardStore } from "../stores/dashboardStore";
 import type {
   CourseCardData,
@@ -37,67 +30,27 @@ export function Dashboard() {
     isLoading,
     error,
     createCourse: createCourseMutation,
+    uploadFile: uploadFileMutation,
     startPipeline,
     exportAllCourses,
     isExportingAll,
   } = useDashboard();
-  const [localIsLoading, setLocalIsLoading] = useState(false);
-  const [_error, setError] = useState<string | null>(null);
   const [exportAllError, setExportAllError] = useState<string | null>(null);
   const [exportAllSuccess, setExportAllSuccess] = useState<boolean>(false);
 
   const selectedSemester = SEMESTERS.find((s) => s.key === semesterFilter);
   const resolvedSemester = (selectedSemester ?? SEMESTERS[2]) as Semester;
 
-  useEffect(() => {
-    loadDashboard();
-  }, [semesterFilter]);
-
-  async function loadDashboard() {
-    console.log("[Dashboard] loadDashboard start");
-    setLocalIsLoading(true);
-    setError(null);
-    try {
-      let semesterCode: string | undefined;
-      if (semesterFilter !== "all") {
-        semesterCode = semesterFilter;
-      }
-      console.log("[Dashboard] fetch courses with semesterCode:", semesterCode);
-      const coursesData = await getCourses(semesterCode);
-      console.log("[Dashboard] coursesData:", coursesData);
-      if (coursesData?.courses) {
-        // Update the courses from the hook as well
-        // Note: We're not directly updating the hook's state, but we could refetch
-      } else {
-        // No courses found
-      }
-
-      console.log("[Dashboard] fetch pipeline summary");
-      const pipelineData = await getPipelineSummary();
-      console.log("[Dashboard] pipelineData:", pipelineData);
-      // Update the pipeline summary from the hook
-    } catch (err) {
-      console.error("[Dashboard] loadDashboard error:", err);
-      setError(err instanceof Error ? err.message : "載入儀表板失敗");
-    } finally {
-      console.log("[Dashboard] loadDashboard finally");
-      setLocalIsLoading(false);
-    }
-  }
-
   async function handleStartCourse(courseId: string, sessionId?: string) {
     try {
-      setLocalIsLoading(true);
       if (sessionId) {
         navigate(`/course/${courseId}?tab=outline&session=${sessionId}`);
       } else {
-        await startSession({ sessionId: crypto.randomUUID(), courseId });
+        await startPipeline(courseId);
         navigate(`/course/${courseId}?tab=raw`);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "啟動課程失敗");
-    } finally {
-      setLocalIsLoading(false);
+      console.error("[Dashboard] handleStartCourse error:", err);
     }
   }
 
@@ -109,13 +62,9 @@ export function Dashboard() {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
         try {
-          setLocalIsLoading(true);
-          await uploadFile(file, courseId);
-          await loadDashboard();
+          await uploadFileMutation({ file, courseId });
         } catch (err) {
-          setError(err instanceof Error ? err.message : "上傳失敗");
-        } finally {
-          setLocalIsLoading(false);
+          console.error("[Dashboard] handleUploadMaterials error:", err);
         }
       }
     };
@@ -161,16 +110,12 @@ export function Dashboard() {
   }) => {
     console.log("[Dashboard] handleCreateCourse called with:", data);
     try {
-      setLocalIsLoading(true);
-      await createCourse(data);
-      console.log("[Dashboard] createCourse succeeded, reloading dashboard");
-      await loadDashboard();
+      await createCourseMutation(data);
+      console.log("[Dashboard] createCourse succeeded");
       closeCreateModal();
     } catch (err) {
       console.error("[Dashboard] createCourse failed:", err);
-      setError(err instanceof Error ? err.message : "建立課程失敗");
-    } finally {
-      setLocalIsLoading(false);
+      // Error will be handled by the mutation's error state
     }
   };
 
@@ -182,11 +127,35 @@ export function Dashboard() {
     console.log("Browse archive clicked");
   };
 
-  if (localIsLoading) {
-    console.log("[Dashboard] rendering loading state");
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-surface-container-lowest">
         載入中...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-surface-container-lowest gap-4 p-4">
+        <div className="text-red-400">
+          <span className="material-symbols-outlined text-6xl">error_outline</span>
+        </div>
+        <div className="text-center">
+          <p className="text-body-lg text-red-300">載入儀表板失敗</p>
+          <p className="text-body-md text-on-surface-variant mt-1">
+            {error instanceof Error ? error.message : String(error)}
+          </p>
+          <button
+            onClick={() => {
+              // Trigger refetch through queryClient
+              window.location.reload();
+            }}
+            className="mt-4 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg font-body-md"
+          >
+            重新整理頁面
+          </button>
+        </div>
       </div>
     );
   }
@@ -491,7 +460,7 @@ export function Dashboard() {
               isOpen={createModal.open}
               onClose={closeCreateModal}
               onSubmit={handleCreateCourse}
-              loading={localIsLoading}
+              loading={isLoading}
               {...(createModal.mode === "edit" ? { initialData: null as any } : {})}
             />
           )}

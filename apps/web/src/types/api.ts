@@ -153,6 +153,7 @@ export interface SidekickMessage {
   timestamp: string;
   relatedConceptIds?: string[];
   relatedSlideUris?: string[];
+  contextReferences?: ContextReference[];
   isStreaming?: boolean;
 }
 

@@ -14,6 +14,9 @@ interface NvidiaNimResponse {
     message?: {
       content?: string;
     };
+    delta?: {
+      content?: string;
+    };
   }>;
   error?: {
     message: string;
@@ -102,6 +105,90 @@ export class NvidiaNimAdapter implements IAIReasoningGateway {
     return err(DomainError.aiInferenceFailed(lastError));
   }
 
+  async *multimodalInferStream(
+    systemPrompt: string,
+    textPayload: string,
+    imageUrls: string[],
+  ): AsyncIterable<{ content?: string }> {
+    // Load the prompt for the given systemPrompt key if not cached
+    let prompt = this.promptCache.get(systemPrompt);
+    if (prompt === undefined) {
+      try {
+        prompt = await readFile(join(this.promptsDir, `${systemPrompt}.txt`), "utf-8");
+        this.promptCache.set(systemPrompt, prompt);
+      } catch (cause) {
+        throw new Error(
+          `Failed to load prompt file for key "${systemPrompt}": ${cause instanceof Error ? cause.message : String(cause)}`,
+        );
+      }
+    }
+
+    // Build the complete prompt
+    const fullPrompt = this.buildPrompt(prompt, textPayload, imageUrls);
+
+    // Build single user message with multimodal content
+    const messages = [
+      {
+        role: "user" as const,
+        content: this.buildMultimodalContent(fullPrompt, imageUrls),
+      },
+    ];
+
+    const response = await fetch(`${this.baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.apiKey}`,
+        Accept: "text/event-stream",
+      },
+      body: JSON.stringify({
+        model: this.model,
+        messages,
+        temperature: 0.7, // Higher temperature for more natural conversational output
+        max_tokens: 2048,
+        stream: true,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`NIM API error: ${response.status} ${errorText}`);
+    }
+
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+
+    if (!reader) return;
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n");
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = line.slice(6).trim();
+            if (data === "[DONE]") return;
+            try {
+              const parsed = JSON.parse(data) as NvidiaNimResponse;
+              const content = parsed.choices?.[0]?.delta?.content;
+              if (content) {
+                yield { content };
+              }
+            } catch {
+              // Ignore parsing errors for malformed lines
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  }
+
   /**
    * Build the complete prompt for NIM
    * The prompt parameter is the loaded prompt file content (which includes JSON schema instruction)
@@ -114,7 +201,7 @@ export class NvidiaNimAdapter implements IAIReasoningGateway {
   }
 
   /**
-   * Call NVIDIA NIM API with multimodal input
+   * Call NVIDIA NIM API with multimodal input (non-streaming)
    */
   private async callNim(prompt: string, imageUrls: string[]): Promise<NvidiaNimResponse> {
     // Build single user message with multimodal content (text + images)

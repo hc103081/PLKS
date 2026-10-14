@@ -1,51 +1,70 @@
 import React from "react";
-import type {
-  GameAnswer,
-  GameSession,
-  GameSessionState,
-  QuizItem,
-  QuizItemPayload,
-  SidekickMessage,
-} from "../../../types/api";
 import type { CourseCardData } from "../../../types/course";
+import type { QuizItemPayload } from "../../../types/api";
 import { LoadingSkeleton } from "../../shared";
+import { useGamification } from "../../../hooks/useGamification";
 
 interface TabGameProps {
   course: CourseCardData | undefined;
-  gameState: GameSessionState | undefined;
-  gameSession: GameSession | undefined;
-  _sessionId: string | undefined;
-  isLoading: boolean;
-  sidekickOpen: boolean;
-  onSidekickToggle: () => void;
-  onAnswerSubmit: (
-    answer: string,
-    timeSpentMs: number,
-  ) => Promise<{ isCorrect: boolean; xpEarned: number; nextQuiz?: QuizItemPayload }>;
-  onSidekickRequest: () => Promise<void>;
-  onSidekickSendMessage: (message: string) => Promise<void>;
+  sessionId?: string | undefined;
 }
 
-export function TabGame({
-  course,
-  gameState,
-  gameSession,
-  _sessionId,
-  isLoading,
-  sidekickOpen,
-  onSidekickToggle,
-  onAnswerSubmit,
-  onSidekickRequest,
-  onSidekickSendMessage,
-}: TabGameProps) {
+export function TabGame({ course, sessionId }: TabGameProps) {
+  const {
+    gameState,
+    gameSession,
+    currentQuiz,
+    isLoading,
+    isSubmitting,
+    isRequestingHelp,
+    submitAnswer,
+    requestHelp,
+    advanceQuiz,
+    dismissSidekick,
+    startGame,
+  } = useGamification({ courseId: course?.id, sessionId });
+
+  const progress = gameState && gameState.totalQuizzes > 0
+    ? (gameState.currentQuizIndex / gameState.totalQuizzes) * 100
+    : 0;
+
+  // Helper to get Chinese label for quiz type
+  const getTypeLabel = (type: string): string => {
+    switch (type) {
+      case "multiple_choice":
+        return "選擇題";
+      case "true_false":
+        return "是非題";
+      case "short_answer":
+        return "簡答題";
+      default:
+        return type;
+    }
+  };
+
+  // Handle answer submission from GameQuizPlayer
+  const handleAnswerSubmit = async (answer: string, timeSpentMs: number) => {
+    await submitAnswer(answer, timeSpentMs);
+  };
+
+  // Handle sidekick request from GameQuizPlayer
+  const handleSidekickRequest = async () => {
+    await requestHelp();
+  };
+
+  // Handle sidekick message from GameSidekickSidebar
+  const handleSidekickMessage = async (message: string) => {
+    // For now, just call requestHelp with the message
+    // TODO: Implement sidekick chat API with custom message
+    console.log("Sidekick message:", message);
+    await requestHelp();
+  };
+
   if (isLoading || !gameState) {
     return (
       <div className="p-8">
         <div className="max-w-6xl mx-auto animate-pulse">
-          <div
-            className="grid grid-cols-1 lg:grid-cols-4 gap-6"
-            style={{ gridTemplateColumns: "1fr 360px" }}
-          >
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6" style={{ gridTemplateColumns: "1fr 360px" }}>
             <LoadingSkeleton variant="card" height={700} />
             <LoadingSkeleton variant="card" height={700} />
           </div>
@@ -54,95 +73,37 @@ export function TabGame({
     );
   }
 
-  const progress =
-    gameState.totalQuizzes > 0 ? (gameState.currentQuizIndex / gameState.totalQuizzes) * 100 : 0;
-
-  const currentQuizRaw =
-    gameState.currentQuizIndex < (gameSession?.quizItems?.length || 0)
-      ? gameSession?.quizItems?.[gameState.currentQuizIndex]
-      : null;
-
-  const currentQuiz: CurrentQuiz | null = currentQuizRaw
-    ? {
-        question: currentQuizRaw.question,
-        type: currentQuizRaw.type,
-        correctAnswer: currentQuizRaw.correctAnswer,
-        options: currentQuizRaw.options,
-        difficulty: undefined,
-      }
-    : null;
-
-  const [submitting, setSubmitting] = React.useState(false);
-  const [answerStartTime, setAnswerStartTime] = React.useState(Date.now());
-
-  const handleAnswerSubmit = async (answer: string) => {
-    if (submitting || !currentQuiz) return;
-    setSubmitting(true);
-    try {
-      const timeSpentMs = Date.now() - answerStartTime;
-      const _result = await onAnswerSubmit(answer, timeSpentMs);
-      // Note: State updates are handled by parent (CoursePage) via query invalidation
-      // We just need to reset the local UI state
-      setAnswerStartTime(Date.now());
-    } catch (error) {
-      console.error("Failed to submit answer:", error);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleSidekickRequest = async () => {
-    if (submitting) return;
-    setSubmitting(true);
-    try {
-      await onSidekickRequest();
-    } catch (error) {
-      console.error("Failed to request sidekick help:", error);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleSidekickMessage = async (message: string) => {
-    if (submitting) return;
-    setSubmitting(true);
-    try {
-      await onSidekickSendMessage(message);
-    } catch (error) {
-      console.error("Failed to send sidekick message:", error);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   return (
     <div className="h-[calc(100vh-200px)] max-w-[1440px] mx-auto p-4 lg:p-6">
       <div
         className="grid gap-4 h-full"
-        style={{ gridTemplateColumns: sidekickOpen ? "1fr 360px" : "1fr" }}
+        style={{ gridTemplateColumns: gameState.sidekickOpen ? "1fr 360px" : "1fr" }}
       >
         {/* Main: Quiz Player */}
         <GameQuizPlayer
           course={course}
           gameState={gameState}
           currentQuiz={currentQuiz}
-          currentQuizRaw={currentQuizRaw ?? null}
           progress={progress}
           gameSession={gameSession}
           onAnswerSubmit={handleAnswerSubmit}
           onSidekickClick={handleSidekickRequest}
-          submitting={submitting}
+          onAdvanceQuiz={advanceQuiz}
+          onDismissSidekick={dismissSidekick}
+          onStartGame={startGame}
+          getTypeLabel={getTypeLabel}
+          submitting={isSubmitting}
         />
 
         {/* Sidebar: Sidekick */}
-        {sidekickOpen && (
+        {gameState.sidekickOpen && (
           <GameSidekickSidebar
             gameState={gameState}
             currentQuiz={currentQuiz}
-            onClose={onSidekickToggle}
+            onClose={dismissSidekick}
             onSendMessage={handleSidekickMessage}
-            onQuickAction={(msg) => handleSidekickMessage(msg)}
-            submitting={submitting}
+            onQuickAction={handleSidekickMessage}
+            submitting={isRequestingHelp}
           />
         )}
       </div>
@@ -157,46 +118,62 @@ interface CurrentQuiz {
   correctAnswer: string;
   options?: string[] | undefined;
   difficulty?: number | undefined;
+  contextReference?: string;
+}
+
+interface GameQuizPlayerProps {
+  course: CourseCardData | undefined;
+  gameState: GameQuizPlayerState;
+  currentQuiz: CurrentQuiz | null;
+  progress: number;
+  gameSession: GameQuizPlayerGameSession | undefined;
+  onAnswerSubmit: (answer: string, timeSpentMs: number) => Promise<void>;
+  onSidekickClick: () => void;
+  onAdvanceQuiz: () => void;
+  onDismissSidekick: () => void;
+  onStartGame: (courseId: string) => void;
+  getTypeLabel: (type: string) => string;
+  submitting: boolean;
 }
 
 function GameQuizPlayer({
   course,
   gameState,
   currentQuiz,
-  currentQuizRaw,
   progress,
   gameSession,
   onAnswerSubmit,
   onSidekickClick,
+  onAdvanceQuiz,
+  onDismissSidekick,
+  onStartGame,
+  getTypeLabel,
   submitting,
-}: {
-  course: CourseCardData | undefined;
-  gameState: GameSessionState;
-  currentQuiz: CurrentQuiz | null;
-  currentQuizRaw: QuizItemPayload | null;
-  progress: number;
-  gameSession: GameSession | undefined;
-  onAnswerSubmit: (answer: string) => void;
-  onSidekickClick: () => void;
-  submitting: boolean;
-}) {
+}: GameQuizPlayerProps) {
   const [userAnswer, setUserAnswer] = React.useState("");
   const [showFeedback, setShowFeedback] = React.useState(false);
   const [isCorrect, setIsCorrect] = React.useState(false);
+  const [answerStartTime, setAnswerStartTime] = React.useState(Date.now());
 
-  const handleSubmit = () => {
-    if (!userAnswer.trim() || submitting) return;
-    const correct =
-      currentQuiz?.correctAnswer?.toLowerCase().trim() === userAnswer.toLowerCase().trim();
+  const handleSubmit = async () => {
+    if (!userAnswer.trim() || submitting || !currentQuiz) return;
+    const timeSpentMs = Date.now() - answerStartTime;
+    const correct = currentQuiz.correctAnswer?.toLowerCase().trim() === userAnswer.toLowerCase().trim();
     setIsCorrect(correct);
     setShowFeedback(true);
-    onAnswerSubmit(userAnswer);
+    await onAnswerSubmit(userAnswer, timeSpentMs);
   };
 
   const handleNext = () => {
     setUserAnswer("");
     setShowFeedback(false);
-    // TODO: Navigate to next quiz
+    setAnswerStartTime(Date.now());
+    onAdvanceQuiz();
+  };
+
+  const handleSidekickDismiss = () => {
+    onDismissSidekick();
+    setShowFeedback(false);
   };
 
   return (
@@ -207,14 +184,7 @@ function GameQuizPlayer({
           <div className="relative w-12 h-12">
             <svg className="w-full h-full -rotate-90" aria-label="進度環" role="img">
               <title>進度環</title>
-              <circle
-                className="stroke-outline"
-                cx="18"
-                cy="18"
-                fill="none"
-                r="15"
-                strokeWidth="3"
-              />
+              <circle className="stroke-outline" cx="18" cy="18" fill="none" r="15" strokeWidth="3" />
               <circle
                 className="stroke-primary"
                 cx="18"
@@ -243,7 +213,7 @@ function GameQuizPlayer({
         <button
           onClick={onSidekickClick}
           className="btn-primary"
-          disabled={showFeedback}
+          disabled={showFeedback || submitting}
           data-testid="sidekick-btn"
         >
           <span className="material-symbols-outlined text-[18px]">psychology</span>
@@ -258,11 +228,7 @@ function GameQuizPlayer({
             {/* Question Type Badge */}
             <div className="mb-4 flex items-center gap-2">
               <span className="px-3 py-1 rounded-full bg-surface-variant text-on-surface-variant font-label-code-sm">
-                {currentQuiz.type === "multiple_choice"
-                  ? "選擇題"
-                  : currentQuiz.type === "true_false"
-                    ? "是非題"
-                    : "簡答題"}
+                {getTypeLabel(currentQuiz.type)}
               </span>
               {currentQuiz.difficulty && (
                 <span className="px-2 py-1 rounded bg-amber-500/20 text-amber-500 font-label-code-sm">
@@ -272,15 +238,12 @@ function GameQuizPlayer({
             </div>
 
             {/* Question */}
-            <div
-              className="mb-6 p-4 bg-surface-container-low rounded-lg border border-outline"
-              data-testid="quiz-question"
-            >
+            <div className="mb-6 p-4 bg-surface-container-low rounded-lg border border-outline" data-testid="quiz-question">
               <p className="font-headline-sm text-on-surface">{currentQuiz.question}</p>
             </div>
 
             {/* Answer Input */}
-            {!showFeedback && (
+            {!showFeedback && !gameState.sidekickOpen && (
               <div className="mb-6" data-testid="quiz-answer-input">
                 {currentQuiz.type === "multiple_choice" && currentQuiz.options ? (
                   <div className="space-y-2" role="radiogroup" aria-label="選擇答案">
@@ -322,9 +285,7 @@ function GameQuizPlayer({
                           onChange={() => setUserAnswer(opt)}
                           className="w-4 h-4 accent-primary"
                         />
-                        <span className="font-body-md text-on-surface">
-                          {opt === "True" ? "正確" : "錯誤"}
-                        </span>
+                        <span className="font-body-md text-on-surface">{opt === "True" ? "正確" : "錯誤"}</span>
                       </label>
                     ))}
                   </div>
@@ -342,7 +303,7 @@ function GameQuizPlayer({
 
             {/* Submit / Next Button */}
             <div className="flex gap-3">
-              {!showFeedback ? (
+              {!showFeedback && !gameState.sidekickOpen ? (
                 <button
                   onClick={handleSubmit}
                   disabled={!userAnswer.trim() || submitting}
@@ -355,10 +316,17 @@ function GameQuizPlayer({
               ) : (
                 <>
                   <div className="flex-1" />
-                  <button onClick={handleNext} className="btn-primary" disabled={submitting}>
-                    <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-                    下一題
-                  </button>
+                  {gameState.sidekickOpen ? (
+                    <button onClick={handleSidekickDismiss} className="btn-primary" disabled={submitting}>
+                      <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                      我懂了，繼續作答
+                    </button>
+                  ) : (
+                    <button onClick={handleNext} className="btn-primary" disabled={submitting}>
+                      <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                      下一題
+                    </button>
+                  )}
                 </>
               )}
             </div>
@@ -372,31 +340,23 @@ function GameQuizPlayer({
               `}
               >
                 <div className="flex items-center gap-3">
-                  <span
-                    className={`
+                  <span className={`
                     w-10 h-10 rounded-full flex items-center justify-center
                     ${isCorrect ? "bg-tertiary text-white" : "bg-error text-white"}
-                  `}
-                  >
-                    <span className="material-symbols-outlined text-[24px]">
-                      {isCorrect ? "check_circle" : "cancel"}
-                    </span>
+                  `}>
+                    <span className="material-symbols-outlined text-[24px]">{isCorrect ? "check_circle" : "cancel"}</span>
                   </span>
                   <div>
                     <p className="font-body-md font-bold text-on-surface">
                       {isCorrect ? "答對了！太棒了！" : "答錯了，繼續加油！"}
                     </p>
-                    <p className="font-body-sm text-on-surface-variant mt-1">
-                      正確答案：{currentQuiz?.correctAnswer}
-                    </p>
+                    <p className="font-body-sm text-on-surface-variant mt-1">正確答案：{currentQuiz?.correctAnswer}</p>
                   </div>
                 </div>
-                {currentQuizRaw?.contextReference && (
+                {currentQuiz.contextReference && (
                   <div className="mt-3 p-3 bg-surface-container-low rounded border border-outline">
                     <p className="font-label-code-sm text-on-surface-variant">相關概念參考</p>
-                    <p className="font-body-sm text-on-surface mt-1">
-                      {currentQuizRaw?.contextReference}
-                    </p>
+                    <p className="font-body-sm text-on-surface mt-1">{currentQuiz.contextReference}</p>
                   </div>
                 )}
               </div>
@@ -406,42 +366,34 @@ function GameQuizPlayer({
             <div className="mt-6 pt-4 border-t border-outline">
               <p className="font-label-code-sm font-bold text-on-surface-variant mb-2">快速跳轉</p>
               <div className="flex flex-wrap gap-1">
-                {gameSession?.sessionId && (
-                  <div>
-                    {gameSession.quizItems?.map((_item: QuizItemPayload, index: number) => (
-                      <button
-                        key={index}
-                        className={`
-                          w-8 h-8 rounded border font-label-code-sm transition-all
-                          ${
-                            index === gameState.currentQuizIndex
-                              ? "bg-primary border-primary text-white"
-                              : index < gameState.currentQuizIndex
-                                ? "bg-tertiary/20 border-tertiary text-tertiary"
-                                : "border-outline text-on-surface-variant hover:border-primary/50"
-                          }
-                        `}
-                        disabled={index > gameState.currentQuizIndex}
-                      >
-                        {index + 1}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                {gameSession?.quizItems?.map((_item: QuizItemPayload, index: number) => (
+                  <button
+                    key={index}
+                    className={`
+                      w-8 h-8 rounded border font-label-code-sm transition-all
+                      ${
+                        index === gameState.currentQuizIndex
+                          ? "bg-primary border-primary text-white"
+                          : index < gameState.currentQuizIndex
+                          ? "bg-tertiary/20 border-tertiary text-tertiary"
+                          : "border-outline text-on-surface-variant hover:border-primary/50"
+                      }
+                    `}
+                    disabled={index > gameState.currentQuizIndex}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center text-center">
             <div>
-              <span className="material-symbols-outlined text-[48px] text-on-surface-variant mb-4 block">
-                emoji_events
-              </span>
+              <span className="material-symbols-outlined text-[48px] text-on-surface-variant mb-4 block">emoji_events</span>
               <h3 className="font-headline-md font-bold text-on-surface mb-2">測驗完成！</h3>
-              <p className="font-body-md text-on-surface-variant mb-6">
-                最終分數：{gameState.score} XP | 最高連續：{gameState.maxStreak}
-              </p>
-              <button className="btn-primary" onClick={() => {}}>
+              <p className="font-body-md text-on-surface-variant mb-6">最終分數：{gameState.score} XP | 最高連續：{gameState.maxStreak}</p>
+              <button className="btn-primary" onClick={() => onStartGame(course?.id ?? "")}>
                 <span className="material-symbols-outlined text-[18px]">replay</span>
                 重新挑戰
               </button>
@@ -462,7 +414,7 @@ function GameSidekickSidebar({
   onQuickAction,
   submitting,
 }: {
-  gameState: GameSessionState;
+  gameState: GameQuizPlayerState;
   currentQuiz: CurrentQuiz | null;
   onClose: () => void;
   onSendMessage: (message: string) => void;
@@ -470,34 +422,9 @@ function GameSidekickSidebar({
   submitting: boolean;
 }) {
   const [message, setMessage] = React.useState("");
-  const [messages, setMessages] = React.useState<SidekickMessage[]>([
-    {
-      id: "1",
-      role: "assistant",
-      content: `嗨！我是你的學習夥伴 Sidekick 🎓\n\n目前題目：${currentQuiz?.question || "載入中..."}\n\n有什麼我可以幫忙的嗎？你可以問我：\n• 這個概念的詳細解釋\n• 相關的投影片頁面\n• 解題提示或關鍵字\n• 錯誤分析與改進建議`,
-      timestamp: new Date().toISOString(),
-    },
-    ...(gameState.sidekickHistory || []),
-  ]);
-
-  const handleSend = () => {
-    if (!message.trim()) return;
-    const newMessage: SidekickMessage = {
-      id: Date.now().toString(),
-      role: "user",
-      content: message,
-      timestamp: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, newMessage]);
-    onSendMessage(message);
-    setMessage("");
-  };
 
   return (
-    <div
-      className="card-base flex flex-col h-full animate-in slide-in-right"
-      data-testid="sidekick-sidebar"
-    >
+    <div className="card-base flex flex-col h-full animate-in slide-in-right" data-testid="sidekick-sidebar">
       {/* Header */}
       <div className="p-4 border-b border-outline flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -513,20 +440,15 @@ function GameSidekickSidebar({
 
       {/* Chat History */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
-          >
+        {gameState.sidekickHistory.map((msg) => (
+          <div key={msg.id} className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
             <div
               className={`
               w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
               ${msg.role === "user" ? "bg-primary text-white" : "bg-surface-variant text-primary"}
             `}
             >
-              <span className="material-symbols-outlined text-[18px]">
-                {msg.role === "user" ? "person" : "psychology"}
-              </span>
+              <span className="material-symbols-outlined text-[18px]">{msg.role === "user" ? "person" : "psychology"}</span>
             </div>
             <div
               className={`
@@ -591,7 +513,7 @@ function GameSidekickSidebar({
             type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            onKeyDown={(e) => e.key === "Enter" && (handleSend(), e.preventDefault())}
             placeholder="輸入問題..."
             className="flex-1 input-base"
             disabled={submitting}
@@ -609,4 +531,47 @@ function GameSidekickSidebar({
       </div>
     </div>
   );
+
+  function handleSend() {
+    if (!message.trim()) return;
+    onSendMessage(message);
+    setMessage("");
+  }
+}
+
+// Type definitions for internal components
+interface GameQuizPlayerState {
+  sessionId: string;
+  courseId: string;
+  currentQuizIndex: number;
+  totalQuizzes: number;
+  score: number;
+  streak: number;
+  maxStreak: number;
+  xp: number;
+  level: number;
+  answers: Array<{
+    quizId: string;
+    userAnswer: string;
+    isCorrect: boolean;
+    timeSpentMs: number;
+    xpEarned: number;
+    sidekickUsed: boolean;
+  }>;
+  sidekickOpen: boolean;
+  sidekickHistory: Array<{
+    id: string;
+    role: "user" | "assistant";
+    content: string;
+    timestamp: string;
+    contextReferences?: Array<{ type: string; title: string; content: string; source?: string }>;
+    isStreaming?: boolean;
+  }>;
+  startedAt: string;
+  completedAt?: string;
+}
+
+interface GameQuizPlayerGameSession {
+  sessionId: string;
+  quizItems: QuizItemPayload[];
 }

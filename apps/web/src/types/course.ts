@@ -267,14 +267,6 @@ export interface DashboardStore {
 }
 
 // Course Page Store - UI state only (not server state)
-export interface GameUIState {
-  sessionId: string;
-  currentQuizIndex: number;
-  score: number;
-  streak: number;
-  sidekickOpen: boolean;
-}
-
 export interface OutlineUIState {
   editingNodeId: string | null;
   viewMode: "tree" | "canvas" | "split";
@@ -294,12 +286,9 @@ export interface RawUIState {
 }
 
 export interface CoursePageStore {
-  game: GameUIState;
   outline: OutlineUIState;
   pipeline: PipelineUIState;
   raw: RawUIState;
-  setGameSession: (sessionId: string) => void;
-  updateGameProgress: (patch: Partial<GameUIState>) => void;
   setEditingNode: (nodeId: string | null) => void;
   setOutlineViewMode: (mode: "tree" | "canvas" | "split") => void;
   toggleNodeExpanded: (nodeId: string) => void;

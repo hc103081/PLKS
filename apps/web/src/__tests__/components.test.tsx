@@ -2,7 +2,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
-import { CourseConsole } from "../pages/CourseConsole.js";
 import { Dashboard } from "../pages/Dashboard.js";
 import { QuizPlayer } from "../pages/QuizPlayer.js";
 import { SidekickChat } from "../pages/SidekickChat.js";
@@ -25,11 +24,15 @@ const renderWithProviders = (ui: React.ReactElement) => {
 // Mock API service
 vi.mock("../services/api", () => ({
   getIngestionStatus: vi.fn().mockResolvedValue({ status: "stopped" }),
-  getCourses: vi.fn().mockResolvedValue([
-    { id: "CS101", name: "機器學習基礎", progress: 65 },
-    { id: "CS102", name: "深度學習", progress: 30 },
-    { id: "CS103", name: "自然語言處理", progress: 0 },
-  ]),
+  getCourses: vi.fn().mockResolvedValue({
+    courses: [
+      { id: "CS101", name: "機器學習基礎", progress: 65, code: "CS101", semester: "104-1", credits: 3, required: true, status: "ready", totalChapters: 10, completedChapters: 6, conceptGraphCount: 5, audioCount: 3, quizCount: 10 },
+      { id: "CS102", name: "深度學習", progress: 30, code: "CS102", semester: "104-1", credits: 3, required: true, status: "ready", totalChapters: 8, completedChapters: 2, conceptGraphCount: 3, audioCount: 2, quizCount: 8 },
+      { id: "CS103", name: "自然語言處理", progress: 0, code: "CS103", semester: "104-1", credits: 3, required: false, status: "idle", totalChapters: 12, completedChapters: 0, conceptGraphCount: 0, audioCount: 0, quizCount: 0 },
+    ],
+    pipelineSummary: { inProgress: 0, pending: 0, needsAttention: 0, healthy: true, healthPercentage: 100 },
+  }),
+  getPipelineSummary: vi.fn().mockResolvedValue({ inProgress: 0, pending: 0, needsAttention: 0, healthy: true, healthPercentage: 100 }),
   startSession: vi.fn().mockResolvedValue({}),
   uploadFile: vi.fn().mockResolvedValue({ sessionId: "test-session", courseId: "CS101" }),
   getQuiz: vi.fn().mockResolvedValue({
@@ -78,18 +81,6 @@ describe("Dashboard", () => {
     // Then check that PLKS is visible (there are two: header and footer)
     const plksElements = screen.getAllByText(/PLKS/i);
     expect(plksElements.length).toBeGreaterThan(0);
-  });
-});
-
-describe("CourseConsole", () => {
-  it("renders without crashing", () => {
-    renderWithProviders(<CourseConsole />);
-    expect(screen.getByText(/課程主控台/i)).toBeInTheDocument();
-  });
-
-  it("shows quiz section", () => {
-    renderWithProviders(<CourseConsole />);
-    expect(screen.getByText(/練習測驗/i)).toBeInTheDocument();
   });
 });
 

@@ -30,9 +30,8 @@ export function useDashboard() {
     error: coursesError,
     refetch: coursesRefetch,
   } = useQuery({
-    queryKey: ["courses", semesterFilter],
+    queryKey: ["courses", { semester: semesterFilter }],
     queryFn: () => getCourses(semesterFilter),
-    staleTime: 30000,
   });
 
   // Get pipeline summary
@@ -41,9 +40,8 @@ export function useDashboard() {
     isLoading: pipelineLoading,
     error: pipelineError,
   } = useQuery({
-    queryKey: ["pipeline-summary"],
+    queryKey: ["pipeline-summary", { semester: semesterFilter }],
     queryFn: () => getPipelineSummary(),
-    staleTime: 60000,
   });
 
   // Create course mutation

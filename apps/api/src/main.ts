@@ -58,6 +58,8 @@ const { registerIngestionRoutes } = await import("./routes/ingestion.js");
 const { registerGamificationRoutes } = await import("./routes/gamification.js");
 const { registerCoursesRoutes } = await import("./routes/courses.js");
 const { registerExportRoutes } = await import("./routes/export.js");
+const { registerConceptTreeRoutes } = await import("./routes/concept-tree.js");
+const { sidekickStreamRoutes } = await import("./routes/sidekick-stream.js");
 
 const env = loadEnv();
 
@@ -182,8 +184,14 @@ registerIngestionRoutes(app, ingestionPipeline, env.API_PREFIX);
 // Register gamification routes
 registerGamificationRoutes(app, gamificationService, env.API_PREFIX);
 
+// Register sidekick stream routes
+await app.register(sidekickStreamRoutes, { prefix: env.API_PREFIX });
+
 // Register courses routes
 registerCoursesRoutes(app, structuredStore, env.API_PREFIX);
+
+// Register concept tree routes
+registerConceptTreeRoutes(app, structuredStore, env.API_PREFIX);
 
 // Register export routes
 registerExportRoutes(app, exportService, env.API_PREFIX);

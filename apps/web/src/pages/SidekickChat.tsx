@@ -8,6 +8,7 @@ import rehypeHighlight from "rehype-highlight";
 import remarkGfm from "remark-gfm";
 import { useAuth } from "../context/AuthContext";
 import { useGamification } from "../hooks/useGamification";
+import { toast } from "sonner";
 import type { ContextReference } from "../types/api";
 
 interface ChatMessage {
@@ -18,6 +19,12 @@ interface ChatMessage {
   contextReferences?: ContextReference[] | undefined;
 }
 
+interface SidekickStreamEvent {
+  type: "delta" | "done" | "error";
+  content?: string;
+  error?: string;
+}
+
 export function SidekickChat() {
   const navigate = useNavigate();
   const { signOut } = useAuth();
@@ -25,37 +32,30 @@ export function SidekickChat() {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get("session");
 
-  const { session, sidekickResponse, showSidekick, requestHelp } = useGamification();
+  const { gameState, currentQuiz, dismissSidekick, isRequestingHelp } = useGamification({
+    courseId: courseId ?? undefined,
+    sessionId: sessionId ?? undefined,
+  });
+
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
-  const [streamingContent, setStreamingContent] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const assistantMessageRef = useRef<string>("");
 
-  // Sync with sidekick response from game
+  // Sync with sidekick history from game state
   useEffect(() => {
-    if (showSidekick && sidekickResponse) {
-      setMessages((prev) => {
-        const lastMsg = prev[prev.length - 1];
-        if (
-          lastMsg &&
-          lastMsg.role === "assistant" &&
-          lastMsg.content === sidekickResponse.explanation
-        ) {
-          return prev;
-        }
-        return [
-          ...prev,
-          {
-            role: "assistant",
-            content: sidekickResponse.explanation,
-            timestamp: new Date(),
-            contextReferences: sidekickResponse.contextReferences,
-          },
-        ];
-      });
+    if (gameState?.sidekickHistory) {
+      const historyMessages: ChatMessage[] = gameState.sidekickHistory.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+        timestamp: new Date(msg.timestamp),
+        contextReferences: msg.contextReferences,
+      }));
+      setMessages(historyMessages);
     }
-  }, [showSidekick, sidekickResponse]);
+  }, [gameState?.sidekickHistory]);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -65,49 +65,89 @@ export function SidekickChat() {
     scrollToBottom();
   }, [scrollToBottom]);
 
-  const handleSend = async () => {
-    if (!input.trim() || !sessionId) return;
+  // Cleanup EventSource on unmount
+  useEffect(() => {
+    return () => {
+      eventSourceRef.current?.close();
+    };
+  }, []);
+
+  const handleSend = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || !sessionId || isStreaming) return;
 
     const userMessage = input.trim();
     setInput("");
     setIsStreaming(true);
-    setStreamingContent("");
+    assistantMessageRef.current = "";
 
-    // Add user message
-    setMessages((prev) => [...prev, { role: "user", content: userMessage, timestamp: new Date() }]);
+    // Add user message immediately (optimistic update)
+    const newUserMessage: ChatMessage = {
+      role: "user",
+      content: userMessage,
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, newUserMessage]);
 
-    try {
-      // Simulate streaming response
-      // In a real implementation, this would connect to a streaming API
-      await requestHelp();
+    // Build SSE URL with query parameters
+    const params = new URLSearchParams({ sessionId, question: userMessage });
+    const sseUrl = `${import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000"}/api/gamification/sidekick/stream?${params}`;
 
-      // For now, we'll show the response from sidekickResponse
-      // The sidekickResponse will be added via the useEffect above
-    } catch (err) {
-      console.error("Failed to get Sidekick response:", err);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "抱歉，我無法處理該請求。請再試一次。",
-          timestamp: new Date(),
-        },
-      ]);
-    } finally {
+    const es = new EventSource(sseUrl, { withCredentials: true });
+    eventSourceRef.current = es;
+
+    es.onmessage = (event) => {
+      try {
+        const data: SidekickStreamEvent = JSON.parse(event.data);
+
+        if (data.type === "delta" && data.content) {
+          assistantMessageRef.current += data.content;
+          setMessages((prev) => {
+            const last = prev[prev.length - 1];
+            if (last?.role === "assistant") {
+              return [...prev.slice(0, -1), { ...last, content: assistantMessageRef.current }];
+            }
+            return [...prev, { role: "assistant", content: assistantMessageRef.current, timestamp: new Date() }];
+          });
+        } else if (data.type === "done") {
+          es.close();
+          eventSourceRef.current = null;
+          setIsStreaming(false);
+          // The sidekickHistory will be synced via the gameState query
+        } else if (data.type === "error") {
+          es.close();
+          eventSourceRef.current = null;
+          setIsStreaming(false);
+          toast.error(data.error ?? "串流發生錯誤");
+        }
+      } catch {
+        // Ignore parsing errors
+      }
+    };
+
+    es.onerror = () => {
+      if (es.readyState === EventSource.CLOSED) return;
+      es.close();
+      eventSourceRef.current = null;
       setIsStreaming(false);
-      setStreamingContent("");
-    }
-  };
+      toast.error("連線失敗，請重試");
+    };
+  }, [sessionId, isStreaming]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      handleSend(e as any);
     }
   };
 
   const goBackToCourse = () => {
     navigate(`/course/${courseId}?session=${sessionId}`);
+  };
+
+  const handleDismissSidekick = () => {
+    dismissSidekick();
+    navigate(`/course/${courseId}?session=${sessionId}&tab=game`);
   };
 
   const renderMarkdown = (content: string) => (
@@ -117,9 +157,7 @@ export function SidekickChat() {
       components={{
         code: ({ node, children, ...props }) => {
           if (!node) return <code {...(props as Record<string, unknown>)}>{String(children)}</code>;
-          const className = (node.properties?.className as string[])?.find((c) =>
-            c.startsWith("language-"),
-          );
+          const className = (node.properties?.className as string[])?.find((c) => c.startsWith("language-"));
           const language = className?.replace("language-", "") || "plaintext";
 
           return (
@@ -135,12 +173,7 @@ export function SidekickChat() {
           );
         },
         pre: ({ children, ...props }) => (
-          <div
-            className="bg-gray-900 rounded-lg p-4 overflow-x-auto my-2"
-            {...(props as Record<string, unknown>)}
-          >
-            {children}
-          </div>
+          <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto my-2" {...(props as Record<string, unknown>)}>{children}</div>
         ),
       }}
     >
@@ -153,11 +186,7 @@ export function SidekickChat() {
       <header className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={goBackToCourse}
-              className="text-gray-500 hover:text-gray-700"
-            >
+            <button type="button" onClick={goBackToCourse} className="text-gray-500 hover:text-gray-700">
               ← 返回課程
             </button>
             <div>
@@ -168,17 +197,13 @@ export function SidekickChat() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {session && (
+            {gameState && (
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-medium text-gray-900">{session.score} XP</p>
-                <p className="text-xs text-gray-500">🔥 {session.streak} 連續</p>
+                <p className="text-sm font-medium text-gray-900">{gameState.score} XP</p>
+                <p className="text-xs text-gray-500">🔥 {gameState.streak} 連續</p>
               </div>
             )}
-            <button
-              type="button"
-              onClick={() => signOut()}
-              className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 rounded hover:bg-gray-100"
-            >
+            <button type="button" onClick={() => signOut()} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 rounded hover:bg-gray-100">
               登出
             </button>
           </div>
@@ -198,15 +223,29 @@ export function SidekickChat() {
                 .filter((m) => m.contextReferences)
                 .flatMap((m) => m.contextReferences ?? [])
                 .map((ref, idx) => (
-                  <div
-                    key={`${ref.type}-${ref.title}-${idx}`}
-                    className="px-2 py-1 bg-white border border-blue-200 rounded text-xs text-blue-700"
-                  >
+                  <div key={`${ref.type}-${ref.title}-${idx}`} className="px-2 py-1 bg-white border border-blue-200 rounded text-xs text-blue-700">
                     <span className="font-medium">[{ref.type}]</span> {ref.title}
                     {ref.source && <span className="ml-1 text-gray-400">({ref.source})</span>}
                   </div>
                 ))}
             </div>
+          </div>
+        )}
+
+        {/* Current Quiz Context */}
+        {currentQuiz && !gameState?.sidekickOpen && (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-100 rounded-lg">
+            <div className="flex items-center gap-2 text-yellow-800 font-medium mb-2">
+              <span className="material-symbols-outlined text-base">quiz</span>
+              <span>當前測驗題目</span>
+            </div>
+            <p className="text-yellow-700 text-sm">{currentQuiz.question}</p>
+            <button
+              onClick={() => navigate(`/course/${courseId}?session=${sessionId}&tab=game`)}
+              className="mt-2 text-xs text-yellow-600 hover:underline"
+            >
+              前往測驗頁面作答 →
+            </button>
           </div>
         )}
 
@@ -231,7 +270,7 @@ export function SidekickChat() {
                 />
               </svg>
               <p className="text-lg font-medium">歡迎來到小幫手！</p>
-              <p className="text-sm mt-1">隨時詢問我有關課程材料的任何問題。</p>
+              <p className="text-sm mt-1">輸入問題開始對話，或點擊下方建議</p>
               <p className="text-xs mt-2">我可以幫助澄清概念，解釋錯誤答案，並指導您的學習。</p>
             </div>
           )}
@@ -259,23 +298,20 @@ export function SidekickChat() {
                   <span className="material-symbols-outlined text-[12px]">schedule</span>
                   {msg.timestamp.toLocaleTimeString()}
                   {msg.isStreaming && (
-                    <span className="material-symbols-outlined text-[12px] animate-pulse">
-                      sync
-                    </span>
+                    <span className="material-symbols-outlined text-[12px] animate-pulse">sync</span>
                   )}
                 </p>
               </div>
             </div>
           ))}
 
-          {isStreaming && (
+          {isStreaming && messages.length === 0 && (
             <div className="flex justify-start">
               <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 rounded-bl-none">
                 <div className="flex items-center gap-2 text-gray-500 text-sm">
                   <span className="material-symbols-outlined animate-spin">sync</span>
                   <span>小幫手正在思考中...</span>
                 </div>
-                {streamingContent && <div className="mt-2">{renderMarkdown(streamingContent)}</div>}
               </div>
             </div>
           )}
@@ -283,40 +319,62 @@ export function SidekickChat() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Area */}
+        {/* Input */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <div className="flex gap-3">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="詢問小幫手問題... (Shift+Enter 換行)"
-              rows={2}
-              className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-              disabled={isStreaming}
-              aria-label="聊天輸入"
-            />
-            <button
-              type="button"
-              onClick={handleSend}
-              disabled={!input.trim() || isStreaming}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium flex items-center gap-2"
-            >
-              {isStreaming ? (
-                <>
-                  <span className="material-symbols-outlined animate-spin">sync</span>
-                  發送中...
-                </>
-              ) : (
-                "發送"
-              )}
-            </button>
-          </div>
-          <p className="text-xs text-gray-500 mt-2 text-center">
-            小幫手僅了解當前測驗題目、相關概念和參考投影片。
-          </p>
+          <form onSubmit={handleSend} className="space-y-3">
+            <div className="flex gap-3">
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="詢問小幫手問題... (Shift+Enter 換行)"
+                rows={1}
+                className="flex-1 bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 rounded-lg px-4 py-2 resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={isStreaming}
+                aria-label="聊天輸入"
+              />
+              <button
+                type="submit"
+                disabled={!input.trim() || isStreaming}
+                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2 rounded-lg transition-colors flex items-center gap-2"
+              >
+                {isStreaming ? (
+                  <>
+                    <span className="material-symbols-outlined animate-spin">sync</span>
+                    串流中...
+                  </>
+                ) : (
+                  "發送"
+                )}
+              </button>
+            </div>
+
+            {/* Suggested questions */}
+            <div className="flex flex-wrap gap-2">
+              {[
+                "詳細解釋這個概念",
+                "給我解題提示",
+                "用生活例子類比",
+                "相關知識點有哪些",
+                "為什麼我會答錯",
+              ].map((suggestion, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setInput(suggestion)}
+                  disabled={isStreaming}
+                  className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full transition-colors"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 text-center">
+              小幫手僅了解當前測驗題目、相關概念和參考投影片。
+            </p>
+          </form>
         </div>
-      </main>
-    </div>
-  );
-}
+        </main>
+      </div>
+    );
+  }
